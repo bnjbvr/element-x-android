@@ -188,6 +188,10 @@ class RustMatrixClientFactory(
                 // Workaround for non-nullable proxy parameter in the SDK, since each call to the ClientBuilder returns a new reference we need to keep
                 proxyProvider.provides()?.let { proxy(it) } ?: this
             }
+            .withSearchIndexStore(
+                path = File(sessionPaths.fileDirectory, "searchIndex").absolutePath,
+                password = passphrase,
+            )
     }
 }
 
