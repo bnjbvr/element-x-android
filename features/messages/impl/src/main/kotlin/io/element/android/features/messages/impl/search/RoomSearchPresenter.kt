@@ -80,7 +80,6 @@ class RoomSearchPresenter @Inject constructor(
                 .collect { (query, _) ->
                     if (query.isBlank()) return@collect
                     isSearching = true
-                    results = persistentListOf()
                     try {
                         val iterator = room.search(query)
                         currentIterator = iterator

@@ -92,7 +92,6 @@ class UnifiedSearchPresenter @Inject constructor(
                 .collect { (query, _) ->
                     if (query.isBlank()) return@collect
                     isSearchingMessages = true
-                    messageResults = persistentListOf()
                     roomInfoCache.clear()
                     try {
                         val iterator = client.search(query)
