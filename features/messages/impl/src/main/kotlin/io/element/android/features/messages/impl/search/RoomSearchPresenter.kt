@@ -10,11 +10,13 @@ package io.element.android.features.messages.impl.search
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import dev.zacsweers.metro.Inject
 import io.element.android.libraries.architecture.Presenter
 import io.element.android.libraries.designsystem.components.avatar.AvatarData
@@ -40,15 +42,21 @@ import io.element.android.libraries.matrix.api.timeline.item.event.VoiceMessageT
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+private const val SEARCH_DEBOUNCE_MS = 100L
+
 class RoomSearchPresenter @Inject constructor(
     private val room: BaseRoom,
 ) : Presenter<RoomSearchState> {
+    @OptIn(FlowPreview::class)
     @Composable
     override fun present(): RoomSearchState {
         val searchQuery = remember { TextFieldState() }
@@ -59,29 +67,41 @@ class RoomSearchPresenter @Inject constructor(
         var currentIterator by remember { mutableStateOf<RoomSearchIterator?>(null) }
         val coroutineScope = rememberCoroutineScope()
 
+        // A counter to force immediate search when the Search keyboard action is pressed
+        var immediateSearchTrigger by remember { mutableStateOf(0) }
+
+        // Debounced auto-search
+        LaunchedEffect(Unit) {
+            snapshotFlow { searchQuery.text.toString().trim() to immediateSearchTrigger }
+                .debounce { (query, _) ->
+                    if (query.isBlank()) Long.MAX_VALUE else SEARCH_DEBOUNCE_MS
+                }
+                .distinctUntilChanged { old, new -> old.first == new.first }
+                .collect { (query, _) ->
+                    if (query.isBlank()) return@collect
+                    isSearching = true
+                    results = persistentListOf()
+                    try {
+                        val iterator = room.search(query)
+                        currentIterator = iterator
+                        val batch = iterator.nextBatch()
+                        results = batch?.map { it.toResultItem() }?.toImmutableList() ?: persistentListOf()
+                        hasMoreResults = batch != null && batch.isNotEmpty()
+                    } catch (e: Exception) {
+                        Timber.e(e, "Room search failed")
+                        results = persistentListOf()
+                        hasMoreResults = false
+                        currentIterator = null
+                    }
+                    isSearching = false
+                    hasSearched = true
+                }
+        }
+
         fun handleEvent(event: RoomSearchEvent) {
             when (event) {
                 is RoomSearchEvent.Search -> {
-                    val query = searchQuery.text.toString().trim()
-                    if (query.isBlank()) return
-                    coroutineScope.launch {
-                        isSearching = true
-                        results = persistentListOf()
-                        try {
-                            val iterator = room.search(query)
-                            currentIterator = iterator
-                            val batch = iterator.nextBatch()
-                            results = batch?.map { it.toResultItem() }?.toImmutableList() ?: persistentListOf()
-                            hasMoreResults = batch != null && batch.isNotEmpty()
-                        } catch (e: Exception) {
-                            Timber.e(e, "Room search failed")
-                            results = persistentListOf()
-                            hasMoreResults = false
-                            currentIterator = null
-                        }
-                        isSearching = false
-                        hasSearched = true
-                    }
+                    immediateSearchTrigger++
                 }
                 is RoomSearchEvent.Clear -> {
                     searchQuery.clearText()

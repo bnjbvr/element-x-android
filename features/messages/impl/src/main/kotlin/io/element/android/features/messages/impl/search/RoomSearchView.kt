@@ -156,12 +156,6 @@ private fun SearchInputRow(
                 }
             },
         )
-        IconButton(onClick = onSearchClick) {
-            Icon(
-                imageVector = CompoundIcons.Search(),
-                contentDescription = stringResource(CommonStrings.action_search),
-            )
-        }
     }
 }
 
