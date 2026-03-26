@@ -8,6 +8,8 @@
 package io.element.android.features.home.impl.search
 
 import com.google.common.truth.Truth.assertThat
+import app.cash.molecule.RecompositionMode
+import app.cash.molecule.launchMolecule
 import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.matrix.api.core.UserId
@@ -18,7 +20,10 @@ import io.element.android.libraries.matrix.api.timeline.item.event.TextMessageTy
 import io.element.android.libraries.matrix.test.FakeMatrixClient
 import io.element.android.libraries.matrix.test.room.search.FakeGlobalSearchIterator
 import io.element.android.tests.testutils.testWithLifecycleOwner
+import io.element.android.tests.testutils.withFakeLifecycleOwner
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -112,6 +117,47 @@ class GlobalSearchPresenterTest {
             initialState.eventSink(GlobalSearchEvent.Search)
             ensureAllEventsConsumed()
         }
+    }
+
+    @Test
+    fun `present - state is preserved in molecule StateFlow`() = runTest {
+        val searchResults = listOf(aGlobalSearchResult())
+        val client = FakeMatrixClient(
+            searchResult = { FakeGlobalSearchIterator(results = listOf(searchResults)) },
+        )
+        val presenter = createPresenter(client = client)
+        val moleculeJob = kotlinx.coroutines.Job()
+        val moleculeScope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + moleculeJob)
+        val stateFlow = moleculeScope.launchMolecule(RecompositionMode.Immediate) {
+            withFakeLifecycleOwner {
+                presenter.present()
+            }
+        }
+
+        // Initial state
+        val initialState = stateFlow.value
+        assertThat(initialState.results).isEmpty()
+        assertThat(initialState.hasSearched).isFalse()
+
+        // Perform search
+        initialState.searchQuery.edit { append("hello") }
+        initialState.eventSink(GlobalSearchEvent.Search)
+        advanceUntilIdle()
+
+        // Verify search results are in the StateFlow
+        val searchState = stateFlow.value
+        assertThat(searchState.results).hasSize(1)
+        assertThat(searchState.searchQuery.text.toString()).isEqualTo("hello")
+        assertThat(searchState.hasSearched).isTrue()
+
+        // Simulate navigating away and back: the StateFlow retains its value
+        advanceUntilIdle()
+        val preservedState = stateFlow.value
+        assertThat(preservedState.results).hasSize(1)
+        assertThat(preservedState.searchQuery.text.toString()).isEqualTo("hello")
+        assertThat(preservedState.hasSearched).isTrue()
+
+        moleculeJob.cancel()
     }
 
     private fun createPresenter(
