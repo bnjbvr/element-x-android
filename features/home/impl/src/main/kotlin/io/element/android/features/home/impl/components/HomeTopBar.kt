@@ -180,7 +180,7 @@ private fun RoomListMenuItems(
         onClick = onGlobalSearchClick,
     ) {
         Icon(
-            imageVector = CompoundIcons.Spotlight(),
+            imageVector = CompoundIcons.Threads(),
             contentDescription = stringResource(CommonStrings.a11y_global_search),
         )
     }
