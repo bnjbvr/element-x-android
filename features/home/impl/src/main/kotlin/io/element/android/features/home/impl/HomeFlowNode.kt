@@ -294,7 +294,6 @@ class HomeFlowNode(
                 createNode<GlobalSearchNode>(buildContext, listOf(
                     object : GlobalSearchNode.Callback {
                         override fun onResultClick(roomId: RoomId, eventId: EventId) {
-                            backstack.pop()
                             callback.navigateToRoomAndFocusEvent(roomId, eventId)
                         }
                     }
