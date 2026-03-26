@@ -5,7 +5,7 @@
  * Please see LICENSE files in the repository root for full details.
  */
 
-package io.element.android.features.messages.impl.search
+package io.element.android.features.home.impl.search
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
@@ -49,21 +50,22 @@ import io.element.android.libraries.designsystem.theme.components.SearchField
 import io.element.android.libraries.designsystem.theme.components.Text
 import io.element.android.libraries.designsystem.theme.components.TopAppBar
 import io.element.android.libraries.matrix.api.core.EventId
+import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.ui.strings.CommonStrings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RoomSearchView(
-    state: RoomSearchState,
+fun GlobalSearchView(
+    state: GlobalSearchState,
     onBackClick: () -> Unit,
-    onResultClick: (EventId) -> Unit,
+    onResultClick: (RoomId, EventId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(text = stringResource(CommonStrings.screen_room_search_title)) },
+                title = { Text(text = stringResource(CommonStrings.screen_global_search_title)) },
                 navigationIcon = { BackButton(onClick = onBackClick) },
             )
         },
@@ -73,16 +75,16 @@ fun RoomSearchView(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            SearchInputRow(
+            GlobalSearchInputRow(
                 searchQuery = state.searchQuery,
-                onSearchClick = { state.eventSink(RoomSearchEvent.Search) },
+                onSearchClick = { state.eventSink(GlobalSearchEvent.Search) },
             )
-            SearchResultsList(
+            GlobalSearchResultsList(
                 results = state.results,
                 isSearching = state.isSearching,
                 hasMoreResults = state.hasMoreResults,
                 hasSearched = state.hasSearched,
-                onLoadMore = { state.eventSink(RoomSearchEvent.LoadMore) },
+                onLoadMore = { state.eventSink(GlobalSearchEvent.LoadMore) },
                 onResultClick = onResultClick,
             )
         }
@@ -90,7 +92,7 @@ fun RoomSearchView(
 }
 
 @Composable
-private fun SearchInputRow(
+private fun GlobalSearchInputRow(
     searchQuery: TextFieldState,
     onSearchClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -104,7 +106,7 @@ private fun SearchInputRow(
     ) {
         SearchField(
             state = searchQuery,
-            placeholder = stringResource(CommonStrings.screen_room_search_placeholder),
+            placeholder = stringResource(CommonStrings.screen_global_search_placeholder),
             modifier = Modifier.weight(1f),
         )
         IconButton(onClick = onSearchClick) {
@@ -117,13 +119,13 @@ private fun SearchInputRow(
 }
 
 @Composable
-private fun SearchResultsList(
-    results: List<RoomSearchResultItem>,
+private fun GlobalSearchResultsList(
+    results: List<GlobalSearchResultItem>,
     isSearching: Boolean,
     hasMoreResults: Boolean,
     hasSearched: Boolean,
     onLoadMore: () -> Unit,
-    onResultClick: (EventId) -> Unit,
+    onResultClick: (RoomId, EventId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val lazyListState = rememberLazyListState()
@@ -150,7 +152,7 @@ private fun SearchResultsList(
             items = results,
             key = { it.eventId.value },
         ) { item ->
-            SearchResultRow(item = item, onClick = { onResultClick(item.eventId) })
+            GlobalSearchResultRow(item = item, onClick = { onResultClick(item.roomId, item.eventId) })
             HorizontalDivider()
         }
         if (isSearching) {
@@ -168,13 +170,13 @@ private fun SearchResultsList(
         if (!isSearching && results.isEmpty() && hasSearched) {
             item {
                 Text(
-                    text = stringResource(CommonStrings.screen_room_search_no_results),
+                    text = stringResource(CommonStrings.screen_global_search_no_results),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
                     style = ElementTheme.typography.fontBodyMdRegular,
                     color = ElementTheme.colors.textSecondary,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    textAlign = TextAlign.Center,
                 )
             }
         }
@@ -182,59 +184,78 @@ private fun SearchResultsList(
 }
 
 @Composable
-private fun SearchResultRow(
-    item: RoomSearchResultItem,
+private fun GlobalSearchResultRow(
+    item: GlobalSearchResultItem,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Avatar(avatarData = item.senderAvatar, avatarType = AvatarType.User)
-        Column(modifier = Modifier.weight(1f)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = item.senderDisplayName,
-                    style = ElementTheme.typography.fontBodyMdMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = item.formattedTimestamp,
-                    style = ElementTheme.typography.fontBodySmRegular,
-                    color = ElementTheme.colors.textSecondary,
-                )
-            }
-            Spacer(modifier = Modifier.height(2.dp))
+        // Room context row
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Avatar(avatarData = item.roomAvatar, avatarType = AvatarType.Room())
             Text(
-                text = item.contentDescription,
-                style = ElementTheme.typography.fontBodySmRegular,
+                text = item.roomDisplayName,
+                style = ElementTheme.typography.fontBodySmMedium,
                 color = ElementTheme.colors.textSecondary,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        // Message row
+        Row(
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Avatar(avatarData = item.senderAvatar, avatarType = AvatarType.User)
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = item.senderDisplayName,
+                        style = ElementTheme.typography.fontBodyMdMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = item.formattedTimestamp,
+                        style = ElementTheme.typography.fontBodySmRegular,
+                        color = ElementTheme.colors.textSecondary,
+                    )
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = item.contentDescription,
+                    style = ElementTheme.typography.fontBodySmRegular,
+                    color = ElementTheme.colors.textSecondary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
 
 @PreviewsDayNight
 @Composable
-internal fun RoomSearchViewPreview(
-    @PreviewParameter(RoomSearchStateProvider::class) state: RoomSearchState,
+internal fun GlobalSearchViewPreview(
+    @PreviewParameter(GlobalSearchStateProvider::class) state: GlobalSearchState,
 ) = ElementPreview {
-    RoomSearchView(
+    GlobalSearchView(
         state = state,
         onBackClick = {},
-        onResultClick = {},
+        onResultClick = { _, _ -> },
     )
 }

@@ -35,6 +35,7 @@ import io.element.android.features.home.api.HomeEntryPoint
 import io.element.android.features.home.impl.components.RoomListMenuAction
 import io.element.android.features.home.impl.model.RoomListRoomSummary
 import io.element.android.features.home.impl.roomlist.RoomListEvent
+import io.element.android.features.home.impl.search.GlobalSearchNode
 import io.element.android.features.invite.api.InviteData
 import io.element.android.features.invite.api.acceptdecline.AcceptDeclineInviteView
 import io.element.android.features.invite.api.declineandblock.DeclineInviteAndBlockEntryPoint
@@ -48,6 +49,7 @@ import io.element.android.libraries.architecture.BackstackView
 import io.element.android.libraries.architecture.BaseFlowNode
 import io.element.android.libraries.architecture.appyx.launchMolecule
 import io.element.android.libraries.architecture.callback
+import io.element.android.libraries.architecture.createNode
 import io.element.android.libraries.core.extensions.runCatchingExceptions
 import io.element.android.libraries.deeplink.api.usecase.InviteFriendsUseCase
 import io.element.android.libraries.designsystem.components.ProgressDialog
@@ -55,6 +57,7 @@ import io.element.android.libraries.designsystem.utils.DelayedVisibility
 import io.element.android.libraries.di.SessionScope
 import io.element.android.libraries.di.annotations.SessionCoroutineScope
 import io.element.android.libraries.matrix.api.MatrixClient
+import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.services.analytics.api.AnalyticsService
 import kotlinx.coroutines.CoroutineScope
@@ -126,6 +129,9 @@ class HomeFlowNode(
         data object Root : NavTarget
 
         @Parcelize
+        data object GlobalSearch : NavTarget
+
+        @Parcelize
         data class ReportRoom(val roomId: RoomId) : NavTarget
 
         @Parcelize
@@ -137,6 +143,10 @@ class HomeFlowNode(
 
     private fun navigateToReportRoom(roomId: RoomId) {
         backstack.push(NavTarget.ReportRoom(roomId))
+    }
+
+    private fun navigateToGlobalSearch() {
+        backstack.push(NavTarget.GlobalSearch)
     }
 
     private fun navigateToDeclineInviteAndBlockUser(roomSummary: RoomListRoomSummary) {
@@ -225,6 +235,7 @@ class HomeFlowNode(
                 onConfirmRecoveryKeyClick = callback::navigateToEnterRecoveryKey,
                 onRoomSettingsClick = callback::navigateToRoomSettings,
                 onMenuActionClick = { onMenuActionClick(activity, it) },
+                onGlobalSearchClick = ::navigateToGlobalSearch,
                 onReportRoomClick = ::navigateToReportRoom,
                 onDeclineInviteAndBlockUser = ::navigateToDeclineInviteAndBlockUser,
                 modifier = modifier,
@@ -279,6 +290,16 @@ class HomeFlowNode(
                 )
             }
             NavTarget.Root -> rootNode(buildContext)
+            NavTarget.GlobalSearch -> {
+                createNode<GlobalSearchNode>(buildContext, listOf(
+                    object : GlobalSearchNode.Callback {
+                        override fun onResultClick(roomId: RoomId, eventId: EventId) {
+                            backstack.pop()
+                            callback.navigateToRoom(roomId, null)
+                        }
+                    }
+                ))
+            }
         }
     }
 }

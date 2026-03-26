@@ -84,6 +84,7 @@ fun HomeTopBar(
     showAvatarIndicator: Boolean,
     areSearchResultsDisplayed: Boolean,
     onToggleSearch: () -> Unit,
+    onGlobalSearchClick: () -> Unit,
     onMenuActionClick: (RoomListMenuAction) -> Unit,
     onOpenSettings: () -> Unit,
     onAccountSwitch: (SessionId) -> Unit,
@@ -135,6 +136,7 @@ fun HomeTopBar(
                 if (selectedNavigationItem == HomeNavigationBarItem.Chats) {
                     RoomListMenuItems(
                         onToggleSearch = onToggleSearch,
+                        onGlobalSearchClick = onGlobalSearchClick,
                         onMenuActionClick = onMenuActionClick,
                         canReportBug = canReportBug,
                         spaceFiltersState = spaceFiltersState,
@@ -161,6 +163,7 @@ fun HomeTopBar(
 @Composable
 private fun RoomListMenuItems(
     onToggleSearch: () -> Unit,
+    onGlobalSearchClick: () -> Unit,
     onMenuActionClick: (RoomListMenuAction) -> Unit,
     canReportBug: Boolean,
     spaceFiltersState: SpaceFiltersState,
@@ -171,6 +174,14 @@ private fun RoomListMenuItems(
         Icon(
             imageVector = CompoundIcons.Search(),
             contentDescription = stringResource(CommonStrings.action_search),
+        )
+    }
+    IconButton(
+        onClick = onGlobalSearchClick,
+    ) {
+        Icon(
+            imageVector = CompoundIcons.Spotlight(),
+            contentDescription = stringResource(CommonStrings.a11y_global_search),
         )
     }
     SpaceFilterButton(spaceFiltersState = spaceFiltersState)
@@ -344,6 +355,7 @@ internal fun HomeTopBarPreview() = ElementPreview {
         onOpenSettings = {},
         onAccountSwitch = {},
         onToggleSearch = {},
+        onGlobalSearchClick = {},
         canReportBug = true,
         displayFilters = true,
         filtersState = aRoomListFiltersState(),
@@ -365,6 +377,7 @@ internal fun HomeTopBarSpaceFiltersSelectedPreview() = ElementPreview {
         onOpenSettings = {},
         onAccountSwitch = {},
         onToggleSearch = {},
+        onGlobalSearchClick = {},
         canReportBug = true,
         displayFilters = true,
         filtersState = aRoomListFiltersState(),
@@ -386,6 +399,7 @@ internal fun HomeTopBarSpacesPreview() = ElementPreview {
         onOpenSettings = {},
         onAccountSwitch = {},
         onToggleSearch = {},
+        onGlobalSearchClick = {},
         canReportBug = true,
         displayFilters = false,
         filtersState = aRoomListFiltersState(),
@@ -407,6 +421,7 @@ internal fun HomeTopBarWithIndicatorPreview() = ElementPreview {
         onOpenSettings = {},
         onAccountSwitch = {},
         onToggleSearch = {},
+        onGlobalSearchClick = {},
         canReportBug = true,
         displayFilters = true,
         filtersState = aRoomListFiltersState(),
@@ -428,6 +443,7 @@ internal fun HomeTopBarMultiAccountPreview() = ElementPreview {
         onOpenSettings = {},
         onAccountSwitch = {},
         onToggleSearch = {},
+        onGlobalSearchClick = {},
         canReportBug = true,
         displayFilters = true,
         filtersState = aRoomListFiltersState(),

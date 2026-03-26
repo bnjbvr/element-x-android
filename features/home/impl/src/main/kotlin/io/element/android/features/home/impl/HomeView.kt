@@ -82,6 +82,7 @@ fun HomeView(
     onCreateSpaceClick: () -> Unit,
     onRoomSettingsClick: (roomId: RoomId) -> Unit,
     onMenuActionClick: (RoomListMenuAction) -> Unit,
+    onGlobalSearchClick: () -> Unit,
     onReportRoomClick: (roomId: RoomId) -> Unit,
     onDeclineInviteAndBlockUser: (roomSummary: RoomListRoomSummary) -> Unit,
     acceptDeclineInviteView: @Composable () -> Unit,
@@ -121,6 +122,7 @@ fun HomeView(
             onStartChatClick = { if (firstThrottler.canHandle()) onStartChatClick() },
             onCreateSpaceClick = { if (firstThrottler.canHandle()) onCreateSpaceClick() },
             onMenuActionClick = onMenuActionClick,
+            onGlobalSearchClick = { if (firstThrottler.canHandle()) onGlobalSearchClick() },
         )
         // This overlaid view will only be visible when state.displaySearchResults is true
         RoomListSearchView(
@@ -147,6 +149,7 @@ private fun HomeScaffold(
     onStartChatClick: () -> Unit,
     onCreateSpaceClick: () -> Unit,
     onMenuActionClick: (RoomListMenuAction) -> Unit,
+    onGlobalSearchClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     fun onRoomClick(room: RoomListRoomSummary) {
@@ -182,6 +185,7 @@ private fun HomeScaffold(
                 showAvatarIndicator = state.showAvatarIndicator,
                 areSearchResultsDisplayed = roomListState.searchState.isSearchActive,
                 onToggleSearch = { roomListState.eventSink(RoomListEvent.ToggleSearchResults) },
+                onGlobalSearchClick = onGlobalSearchClick,
                 onMenuActionClick = onMenuActionClick,
                 onOpenSettings = onOpenSettings,
                 onAccountSwitch = {
@@ -358,6 +362,7 @@ internal fun HomeViewPreview(@PreviewParameter(HomeStateProvider::class) state: 
         onRoomSettingsClick = {},
         onReportRoomClick = {},
         onMenuActionClick = {},
+        onGlobalSearchClick = {},
         onDeclineInviteAndBlockUser = {},
         acceptDeclineInviteView = {},
         leaveRoomView = {}
@@ -378,6 +383,7 @@ internal fun HomeViewA11yPreview() = ElementPreview {
         onRoomSettingsClick = {},
         onReportRoomClick = {},
         onMenuActionClick = {},
+        onGlobalSearchClick = {},
         onDeclineInviteAndBlockUser = {},
         acceptDeclineInviteView = {},
         leaveRoomView = {}

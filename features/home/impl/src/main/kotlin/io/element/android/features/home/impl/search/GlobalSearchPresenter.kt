@@ -124,7 +124,7 @@ private suspend fun GlobalSearchResult.toResultItem(
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
 
     val roomInfo = roomInfoCache.getOrPut(roomId.value) {
-        client.getRoomInfoFlow(roomId).firstOrNull()?.getOrNull()
+        client.getRoomInfoFlow(roomId).firstOrNull()?.orElse(null)
     }
 
     val roomDisplayName = roomInfo?.name ?: roomId.value
