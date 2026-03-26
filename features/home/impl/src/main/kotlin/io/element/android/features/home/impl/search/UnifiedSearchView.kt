@@ -230,6 +230,7 @@ private fun UnifiedSearchResults(
                 SectionHeader(
                     title = stringResource(CommonStrings.screen_unified_search_section_messages),
                     count = messageResults.size,
+                    hasMore = hasMoreMessages,
                 )
             }
             items(
@@ -273,10 +274,12 @@ private fun UnifiedSearchResults(
 private fun SectionHeader(
     title: String,
     count: Int,
+    hasMore: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    val countText = if (hasMore) "$count+" else "$count"
     Text(
-        text = "$title ($count)",
+        text = "$title ($countText)",
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp),
