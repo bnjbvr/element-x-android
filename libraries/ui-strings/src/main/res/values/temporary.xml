@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="screen_room_search_title">"Search messages"</string>
+    <string name="screen_room_search_placeholder">"Search…"</string>
+    <string name="screen_room_search_no_results">"No results found"</string>
+</resources>

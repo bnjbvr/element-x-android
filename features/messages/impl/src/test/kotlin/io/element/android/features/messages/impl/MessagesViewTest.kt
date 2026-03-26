@@ -629,6 +629,7 @@ private fun <R : TestRule> AndroidComposeTestRule<R, ComponentActivity>.setMessa
     onSendLocationClick: () -> Unit = EnsureNeverCalled(),
     onCreatePollClick: () -> Unit = EnsureNeverCalled(),
     onJoinCallClick: (Boolean) -> Unit = EnsureNeverCalledWithParam(),
+    onSearchClick: () -> Unit = EnsureNeverCalled(),
     onViewAllPinnedMessagesClick: () -> Unit = EnsureNeverCalled(),
 ) {
     setSafeContent {
@@ -644,6 +645,7 @@ private fun <R : TestRule> AndroidComposeTestRule<R, ComponentActivity>.setMessa
                 onSendLocationClick = onSendLocationClick,
                 onCreatePollClick = onCreatePollClick,
                 onJoinCallClick = onJoinCallClick,
+                onSearchClick = onSearchClick,
                 onViewAllPinnedMessagesClick = onViewAllPinnedMessagesClick,
                 knockRequestsBannerView = {},
             )

@@ -16,6 +16,7 @@ import io.element.android.libraries.matrix.api.core.UserId
 import io.element.android.libraries.matrix.api.room.draft.ComposerDraft
 import io.element.android.libraries.matrix.api.room.powerlevels.RoomPermissions
 import io.element.android.libraries.matrix.api.room.powerlevels.RoomPowerLevelsValues
+import io.element.android.libraries.matrix.api.room.search.RoomSearchIterator
 import io.element.android.libraries.matrix.api.room.tombstone.PredecessorRoom
 import io.element.android.libraries.matrix.api.roomdirectory.RoomVisibility
 import io.element.android.libraries.matrix.api.timeline.ReceiptType
@@ -213,6 +214,15 @@ interface BaseRoom : Closeable {
     suspend fun subscribeToCallDecline(notificationEventId: EventId): Flow<UserId>
 
     suspend fun threadRootIdForEvent(eventId: EventId): Result<ThreadId?>
+
+    /**
+     * Search for messages in this room matching the given query.
+     * Returns a [RoomSearchIterator] to iterate over paginated results.
+     *
+     * @param query The search query string.
+     * @return A [RoomSearchIterator] for paginated results.
+     */
+    fun search(query: String): RoomSearchIterator
 
     /**
      * Destroy the room and release all resources associated to it.

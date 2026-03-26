@@ -38,6 +38,7 @@ import io.element.android.features.messages.impl.attachments.preview.Attachments
 import io.element.android.features.messages.impl.pinned.DefaultPinnedEventsTimelineProvider
 import io.element.android.features.messages.impl.pinned.list.PinnedMessagesListNode
 import io.element.android.features.messages.impl.report.ReportMessageNode
+import io.element.android.features.messages.impl.search.RoomSearchNode
 import io.element.android.features.messages.impl.threads.ThreadedMessagesNode
 import io.element.android.features.messages.impl.timeline.TimelineController
 import io.element.android.features.messages.impl.timeline.debug.EventDebugInfoNode
@@ -178,6 +179,9 @@ class MessagesFlowNode(
         data object KnockRequestsList : NavTarget
 
         @Parcelize
+        data object RoomSearch : NavTarget
+
+        @Parcelize
         data class Thread(val threadRootId: ThreadId, val focusedEventId: EventId?) : NavTarget
     }
 
@@ -288,6 +292,10 @@ class MessagesFlowNode(
 
                     override fun navigateToKnockRequestsList() {
                         backstack.push(NavTarget.KnockRequestsList)
+                    }
+
+                    override fun navigateToRoomSearch() {
+                        backstack.push(NavTarget.RoomSearch)
                     }
 
                     override fun navigateToThread(threadRootId: ThreadId, focusedEventId: EventId?) {
@@ -433,6 +441,9 @@ class MessagesFlowNode(
             }
             NavTarget.KnockRequestsList -> {
                 knockRequestsListEntryPoint.createNode(this, buildContext)
+            }
+            NavTarget.RoomSearch -> {
+                createNode<RoomSearchNode>(buildContext)
             }
             is NavTarget.Thread -> {
                 val inputs = ThreadedMessagesNode.Inputs(

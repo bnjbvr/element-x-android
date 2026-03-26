@@ -288,6 +288,7 @@ class ThreadedMessagesNode(
                     onJoinCallClick = { isAudioCall ->
                         callback.navigateToRoomCall(room.roomId, isAudioCall)
                     },
+                    onSearchClick = {},
                     onViewAllPinnedMessagesClick = {},
                     modifier = modifier,
                     knockRequestsBannerView = {},

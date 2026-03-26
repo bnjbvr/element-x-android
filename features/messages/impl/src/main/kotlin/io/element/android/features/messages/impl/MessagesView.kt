@@ -131,6 +131,7 @@ fun MessagesView(
     onSendLocationClick: () -> Unit,
     onCreatePollClick: () -> Unit,
     onJoinCallClick: (isAudioCall: Boolean) -> Unit,
+    onSearchClick: () -> Unit,
     onViewAllPinnedMessagesClick: () -> Unit,
     modifier: Modifier = Modifier,
     forceJumpToBottomVisibility: Boolean = false,
@@ -229,6 +230,7 @@ fun MessagesView(
                             onBackClick = { hidingKeyboard { onBackClick() } },
                             onRoomDetailsClick = { hidingKeyboard { onRoomDetailsClick() } },
                             onJoinCallClick = onJoinCallClick,
+                            onSearchClick = { hidingKeyboard { onSearchClick() } },
                         )
                     }
                 },
@@ -592,6 +594,7 @@ internal fun MessagesViewPreview(@PreviewParameter(MessagesStateProvider::class)
         onSendLocationClick = {},
         onCreatePollClick = {},
         onJoinCallClick = {},
+        onSearchClick = {},
         onViewAllPinnedMessagesClick = { },
         forceJumpToBottomVisibility = true,
         knockRequestsBannerView = {},
@@ -646,6 +649,7 @@ internal fun MessagesViewA11yPreview() = ElementPreview {
         onSendLocationClick = {},
         onCreatePollClick = {},
         onJoinCallClick = {},
+        onSearchClick = {},
         onViewAllPinnedMessagesClick = { },
         forceJumpToBottomVisibility = true,
         knockRequestsBannerView = {},

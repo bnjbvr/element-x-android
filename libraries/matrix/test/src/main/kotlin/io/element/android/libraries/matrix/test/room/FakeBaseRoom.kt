@@ -21,12 +21,14 @@ import io.element.android.libraries.matrix.api.room.RoomMembersState
 import io.element.android.libraries.matrix.api.room.draft.ComposerDraft
 import io.element.android.libraries.matrix.api.room.powerlevels.RoomPermissions
 import io.element.android.libraries.matrix.api.room.powerlevels.RoomPowerLevelsValues
+import io.element.android.libraries.matrix.api.room.search.RoomSearchIterator
 import io.element.android.libraries.matrix.api.room.tombstone.PredecessorRoom
 import io.element.android.libraries.matrix.api.roomdirectory.RoomVisibility
 import io.element.android.libraries.matrix.api.timeline.ReceiptType
 import io.element.android.libraries.matrix.test.A_ROOM_ID
 import io.element.android.libraries.matrix.test.A_SESSION_ID
 import io.element.android.libraries.matrix.test.room.powerlevels.FakeRoomPermissions
+import io.element.android.libraries.matrix.test.room.search.FakeRoomSearchIterator
 import io.element.android.tests.testutils.lambda.lambdaError
 import io.element.android.tests.testutils.simulateLongTask
 import kotlinx.coroutines.CoroutineScope
@@ -65,6 +67,7 @@ class FakeBaseRoom(
     private val reportRoomResult: (String?) -> Result<Unit> = { lambdaError() },
     private val predecessorRoomResult: () -> PredecessorRoom? = { null },
     private val threadRootIdForEventResult: (EventId) -> Result<ThreadId?> = { lambdaError() },
+    private val searchResult: (String) -> RoomSearchIterator = { FakeRoomSearchIterator() },
 ) : BaseRoom {
     private val _roomInfoFlow: MutableStateFlow<RoomInfo> = MutableStateFlow(initialRoomInfo)
     override val roomInfoFlow: StateFlow<RoomInfo> = _roomInfoFlow
@@ -209,6 +212,10 @@ class FakeBaseRoom(
 
     override suspend fun threadRootIdForEvent(eventId: EventId): Result<ThreadId?> {
         return threadRootIdForEventResult(eventId)
+    }
+
+    override fun search(query: String): RoomSearchIterator {
+        return searchResult(query)
     }
 }
 

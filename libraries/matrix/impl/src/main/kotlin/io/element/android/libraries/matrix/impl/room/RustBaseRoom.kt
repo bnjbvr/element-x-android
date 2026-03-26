@@ -26,6 +26,7 @@ import io.element.android.libraries.matrix.api.room.draft.ComposerDraft
 import io.element.android.libraries.matrix.api.room.isDm
 import io.element.android.libraries.matrix.api.room.powerlevels.RoomPermissions
 import io.element.android.libraries.matrix.api.room.powerlevels.RoomPowerLevelsValues
+import io.element.android.libraries.matrix.api.room.search.RoomSearchIterator
 import io.element.android.libraries.matrix.api.room.tombstone.PredecessorRoom
 import io.element.android.libraries.matrix.api.roomdirectory.RoomVisibility
 import io.element.android.libraries.matrix.api.timeline.ReceiptType
@@ -34,6 +35,7 @@ import io.element.android.libraries.matrix.impl.room.member.RoomMemberListFetche
 import io.element.android.libraries.matrix.impl.room.member.RoomMemberMapper
 import io.element.android.libraries.matrix.impl.room.powerlevels.RoomPowerLevelsValuesMapper
 import io.element.android.libraries.matrix.impl.room.powerlevels.RustRoomPermissions
+import io.element.android.libraries.matrix.impl.room.search.RustRoomSearchIterator
 import io.element.android.libraries.matrix.impl.room.tombstone.map
 import io.element.android.libraries.matrix.impl.roomdirectory.map
 import io.element.android.libraries.matrix.impl.timeline.toRustReceiptType
@@ -299,5 +301,9 @@ class RustBaseRoom(
                 it.threadRootEventId()?.let(::ThreadId)
             }
         }
+    }
+
+    override fun search(query: String): RoomSearchIterator {
+        return RustRoomSearchIterator(innerRoom.search(query))
     }
 }
