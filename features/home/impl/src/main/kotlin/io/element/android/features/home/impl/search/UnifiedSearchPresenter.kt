@@ -83,11 +83,11 @@ class UnifiedSearchPresenter @Inject constructor(
         var immediateSearchTrigger by remember { mutableStateOf(0) }
 
         LaunchedEffect(Unit) {
-            snapshotFlow { searchQuery.text.toString() to immediateSearchTrigger }
+            snapshotFlow { searchQuery.text.toString().trim() to immediateSearchTrigger }
                 .debounce { (query, _) ->
                     if (query.isBlank()) Long.MAX_VALUE else MESSAGE_SEARCH_DEBOUNCE_MS
                 }
-                .distinctUntilChanged()
+                .distinctUntilChanged { old, new -> old.first == new.first }
                 .collect { (query, _) ->
                     if (query.isBlank()) return@collect
                     isSearchingMessages = true
