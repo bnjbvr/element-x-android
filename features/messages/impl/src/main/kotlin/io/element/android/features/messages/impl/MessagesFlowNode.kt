@@ -529,7 +529,7 @@ class MessagesFlowNode(
             roomIdOrAlias = room.roomId.toRoomIdOrAlias(),
             eventId = eventId,
         )
-        callback.handlePermalinkClick(permalinkData, pushToBackstack = false)
+        callback.handlePermalinkClick(permalinkData, pushToBackstack = true)
     }
 
     private fun processEventClick(
