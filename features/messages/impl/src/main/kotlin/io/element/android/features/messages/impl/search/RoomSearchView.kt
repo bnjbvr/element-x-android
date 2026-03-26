@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
@@ -161,11 +162,13 @@ private fun SearchResultsList(
     modifier: Modifier = Modifier,
 ) {
     val lazyListState = rememberLazyListState()
+    val currentHasMoreResults by rememberUpdatedState(hasMoreResults)
+    val currentIsSearching by rememberUpdatedState(isSearching)
 
     val shouldLoadMore by remember {
         derivedStateOf {
             val lastVisibleItem = lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()
-            hasMoreResults && !isSearching && lastVisibleItem != null &&
+            currentHasMoreResults && !currentIsSearching && lastVisibleItem != null &&
                 lastVisibleItem.index >= lazyListState.layoutInfo.totalItemsCount - 3
         }
     }
