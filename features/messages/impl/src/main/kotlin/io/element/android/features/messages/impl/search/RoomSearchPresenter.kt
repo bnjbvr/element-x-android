@@ -22,6 +22,21 @@ import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.matrix.api.room.BaseRoom
 import io.element.android.libraries.matrix.api.room.search.RoomSearchIterator
 import io.element.android.libraries.matrix.api.room.search.RoomSearchResult
+import io.element.android.libraries.matrix.api.timeline.item.event.AudioMessageType
+import io.element.android.libraries.matrix.api.timeline.item.event.EventContent
+import io.element.android.libraries.matrix.api.timeline.item.event.FileMessageType
+import io.element.android.libraries.matrix.api.timeline.item.event.ImageMessageType
+import io.element.android.libraries.matrix.api.timeline.item.event.LegacyCallInviteContent
+import io.element.android.libraries.matrix.api.timeline.item.event.LiveLocationContent
+import io.element.android.libraries.matrix.api.timeline.item.event.LocationMessageType
+import io.element.android.libraries.matrix.api.timeline.item.event.MessageContent
+import io.element.android.libraries.matrix.api.timeline.item.event.PollContent
+import io.element.android.libraries.matrix.api.timeline.item.event.RedactedContent
+import io.element.android.libraries.matrix.api.timeline.item.event.StickerContent
+import io.element.android.libraries.matrix.api.timeline.item.event.UnableToDecryptContent
+import io.element.android.libraries.matrix.api.timeline.item.event.UnknownContent
+import io.element.android.libraries.matrix.api.timeline.item.event.VideoMessageType
+import io.element.android.libraries.matrix.api.timeline.item.event.VoiceMessageType
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -106,7 +121,27 @@ private fun RoomSearchResult.toResultItem(): RoomSearchResultItem {
             url = senderAvatarUrl,
             size = AvatarSize.TimelineRoom,
         ),
-        contentBody = contentBody,
+        contentDescription = content.toSearchDescription(),
         formattedTimestamp = dateFormat.format(Date(timestamp)),
     )
+}
+
+private fun EventContent.toSearchDescription(): String = when (this) {
+    is MessageContent -> when (val msgType = type) {
+        is ImageMessageType -> msgType.caption ?: "📷 Photo"
+        is VideoMessageType -> msgType.caption ?: "🎥 Video"
+        is FileMessageType -> "📎 ${msgType.filename}"
+        is AudioMessageType -> "🎵 Audio"
+        is VoiceMessageType -> "🎤 Voice message"
+        is LocationMessageType -> "📍 Location"
+        else -> body
+    }
+    is RedactedContent -> "Message deleted"
+    is StickerContent -> bestDescription
+    is PollContent -> "📊 $question"
+    is UnableToDecryptContent -> "Unable to decrypt"
+    is LiveLocationContent -> "📍 Location"
+    is LegacyCallInviteContent -> "Call invite"
+    is UnknownContent -> "Message"
+    else -> "Message"
 }

@@ -9,6 +9,7 @@ package io.element.android.libraries.matrix.api.room.search
 
 import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.UserId
+import io.element.android.libraries.matrix.api.timeline.item.event.EventContent
 
 /**
  * Represents a single search result from a room message search.
@@ -17,7 +18,7 @@ import io.element.android.libraries.matrix.api.core.UserId
  * @property senderId The user ID of the message sender.
  * @property senderDisplayName The display name of the sender, if available.
  * @property senderAvatarUrl The avatar URL of the sender, if available.
- * @property contentBody The text body of the message content.
+ * @property content The event content of the matching message.
  * @property timestamp The timestamp of the event in milliseconds since Unix epoch.
  */
 data class RoomSearchResult(
@@ -25,6 +26,6 @@ data class RoomSearchResult(
     val senderId: UserId,
     val senderDisplayName: String?,
     val senderAvatarUrl: String?,
-    val contentBody: String,
+    val content: EventContent,
     val timestamp: Long,
 )

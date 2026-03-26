@@ -11,10 +11,13 @@ import com.google.common.truth.Truth.assertThat
 import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.UserId
 import io.element.android.libraries.matrix.api.room.search.RoomSearchResult
+import io.element.android.libraries.matrix.api.timeline.item.event.MessageContent
+import io.element.android.libraries.matrix.api.timeline.item.event.TextMessageType
 import io.element.android.libraries.matrix.test.room.FakeBaseRoom
 import io.element.android.libraries.matrix.test.room.search.FakeRoomSearchIterator
 import io.element.android.tests.testutils.testWithLifecycleOwner
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -44,8 +47,8 @@ class RoomSearchPresenterTest {
             val initialState = awaitItem()
             initialState.searchQuery.edit { append("hello") }
             initialState.eventSink(RoomSearchEvent.Search)
-            skipItems(1)
-            val searchingState = awaitItem()
+            advanceUntilIdle()
+            val searchingState = expectMostRecentItem()
             assertThat(searchingState.results).hasSize(1)
             assertThat(searchingState.isSearching).isFalse()
             assertThat(searchingState.hasSearched).isTrue()
@@ -63,12 +66,12 @@ class RoomSearchPresenterTest {
             val initialState = awaitItem()
             initialState.searchQuery.edit { append("hello") }
             initialState.eventSink(RoomSearchEvent.Search)
-            skipItems(1)
-            val withResults = awaitItem()
+            advanceUntilIdle()
+            val withResults = expectMostRecentItem()
             assertThat(withResults.results).isNotEmpty()
 
             withResults.eventSink(RoomSearchEvent.Clear)
-            val clearedState = awaitItem()
+            val clearedState = expectMostRecentItem()
             assertThat(clearedState.results).isEmpty()
             assertThat(clearedState.searchQuery.text.toString()).isEmpty()
             assertThat(clearedState.hasSearched).isFalse()
@@ -87,14 +90,14 @@ class RoomSearchPresenterTest {
             val initialState = awaitItem()
             initialState.searchQuery.edit { append("hello") }
             initialState.eventSink(RoomSearchEvent.Search)
-            skipItems(1)
-            val afterSearch = awaitItem()
+            advanceUntilIdle()
+            val afterSearch = expectMostRecentItem()
             assertThat(afterSearch.results).hasSize(1)
             assertThat(afterSearch.hasMoreResults).isTrue()
 
             afterSearch.eventSink(RoomSearchEvent.LoadMore)
-            skipItems(1)
-            val afterLoadMore = awaitItem()
+            advanceUntilIdle()
+            val afterLoadMore = expectMostRecentItem()
             assertThat(afterLoadMore.results).hasSize(2)
         }
     }
@@ -120,6 +123,15 @@ private fun aRoomSearchResult(eventId: String = "\$event1") = RoomSearchResult(
     senderId = UserId("@alice:matrix.org"),
     senderDisplayName = "Alice",
     senderAvatarUrl = null,
-    contentBody = "Hello world",
+    content = MessageContent(
+        body = "Hello world",
+        inReplyTo = null,
+        isEdited = false,
+        threadInfo = null,
+        type = TextMessageType(
+            body = "Hello world",
+            formatted = null,
+        ),
+    ),
     timestamp = 1711440000000L,
 )

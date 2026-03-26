@@ -222,7 +222,7 @@ private fun SearchResultRow(
             }
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = item.contentBody,
+                text = item.contentDescription,
                 style = ElementTheme.typography.fontBodySmRegular,
                 color = ElementTheme.colors.textSecondary,
                 maxLines = 2,

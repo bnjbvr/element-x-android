@@ -11,20 +11,22 @@ import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.UserId
 import io.element.android.libraries.matrix.api.room.search.RoomSearchIterator
 import io.element.android.libraries.matrix.api.room.search.RoomSearchResult
+import io.element.android.libraries.matrix.impl.timeline.item.event.TimelineEventContentMapper
 import org.matrix.rustcomponents.sdk.ProfileDetails
 import org.matrix.rustcomponents.sdk.RoomSearchIterator as InnerRoomSearchIterator
 import org.matrix.rustcomponents.sdk.RoomSearchResult as InnerRoomSearchResult
-import org.matrix.rustcomponents.sdk.TimelineItemContent
 
 class RustRoomSearchIterator(
     private val inner: InnerRoomSearchIterator,
 ) : RoomSearchIterator {
+    private val contentMapper = TimelineEventContentMapper()
+
     override suspend fun nextBatch(): List<RoomSearchResult>? {
-        return inner.nextEvents()?.map { it.toRoomSearchResult() }
+        return inner.nextEvents()?.map { it.toRoomSearchResult(contentMapper) }
     }
 }
 
-private fun InnerRoomSearchResult.toRoomSearchResult(): RoomSearchResult {
+private fun InnerRoomSearchResult.toRoomSearchResult(contentMapper: TimelineEventContentMapper): RoomSearchResult {
     val displayName = when (val profile = senderProfile) {
         is ProfileDetails.Ready -> profile.displayName
         else -> null
@@ -38,14 +40,7 @@ private fun InnerRoomSearchResult.toRoomSearchResult(): RoomSearchResult {
         senderId = UserId(sender),
         senderDisplayName = displayName,
         senderAvatarUrl = avatarUrl,
-        contentBody = content.extractBody(),
+        content = contentMapper.map(content),
         timestamp = timestamp.toLong(),
     )
-}
-
-private fun TimelineItemContent.extractBody(): String {
-    return when (this) {
-        is TimelineItemContent.MsgLike -> content.toString()
-        else -> ""
-    }
 }

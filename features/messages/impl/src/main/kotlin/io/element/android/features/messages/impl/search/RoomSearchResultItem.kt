@@ -17,6 +17,6 @@ data class RoomSearchResultItem(
     val eventId: EventId,
     val senderDisplayName: String,
     val senderAvatar: AvatarData,
-    val contentBody: String,
+    val contentDescription: String,
     val formattedTimestamp: String,
 )
