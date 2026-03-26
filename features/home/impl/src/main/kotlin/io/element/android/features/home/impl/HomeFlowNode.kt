@@ -35,7 +35,7 @@ import io.element.android.features.home.api.HomeEntryPoint
 import io.element.android.features.home.impl.components.RoomListMenuAction
 import io.element.android.features.home.impl.model.RoomListRoomSummary
 import io.element.android.features.home.impl.roomlist.RoomListEvent
-import io.element.android.features.home.impl.search.GlobalSearchNode
+import io.element.android.features.home.impl.search.UnifiedSearchNode
 import io.element.android.features.invite.api.InviteData
 import io.element.android.features.invite.api.acceptdecline.AcceptDeclineInviteView
 import io.element.android.features.invite.api.declineandblock.DeclineInviteAndBlockEntryPoint
@@ -129,7 +129,7 @@ class HomeFlowNode(
         data object Root : NavTarget
 
         @Parcelize
-        data object GlobalSearch : NavTarget
+        data object UnifiedSearch : NavTarget
 
         @Parcelize
         data class ReportRoom(val roomId: RoomId) : NavTarget
@@ -146,7 +146,7 @@ class HomeFlowNode(
     }
 
     private fun navigateToGlobalSearch() {
-        backstack.push(NavTarget.GlobalSearch)
+        backstack.push(NavTarget.UnifiedSearch)
     }
 
     private fun navigateToDeclineInviteAndBlockUser(roomSummary: RoomListRoomSummary) {
@@ -235,7 +235,7 @@ class HomeFlowNode(
                 onConfirmRecoveryKeyClick = callback::navigateToEnterRecoveryKey,
                 onRoomSettingsClick = callback::navigateToRoomSettings,
                 onMenuActionClick = { onMenuActionClick(activity, it) },
-                onGlobalSearchClick = ::navigateToGlobalSearch,
+                onSearchClick = ::navigateToGlobalSearch,
                 onReportRoomClick = ::navigateToReportRoom,
                 onDeclineInviteAndBlockUser = ::navigateToDeclineInviteAndBlockUser,
                 modifier = modifier,
@@ -290,10 +290,13 @@ class HomeFlowNode(
                 )
             }
             NavTarget.Root -> rootNode(buildContext)
-            NavTarget.GlobalSearch -> {
-                createNode<GlobalSearchNode>(buildContext, listOf(
-                    object : GlobalSearchNode.Callback {
-                        override fun onResultClick(roomId: RoomId, eventId: EventId) {
+            NavTarget.UnifiedSearch -> {
+                createNode<UnifiedSearchNode>(buildContext, listOf(
+                    object : UnifiedSearchNode.Callback {
+                        override fun onRoomClick(roomId: RoomId) {
+                            callback.navigateToRoom(roomId, null)
+                        }
+                        override fun onMessageClick(roomId: RoomId, eventId: EventId) {
                             callback.navigateToRoomAndFocusEvent(roomId, eventId)
                         }
                     }

@@ -7,4 +7,9 @@
     <string name="screen_global_search_placeholder">"Search across all rooms…"</string>
     <string name="screen_global_search_no_results">"No messages found"</string>
     <string name="a11y_global_search">"Search messages"</string>
+    <string name="screen_unified_search_title">"Search"</string>
+    <string name="screen_unified_search_placeholder">"Search rooms and messages…"</string>
+    <string name="screen_unified_search_section_rooms">"Rooms"</string>
+    <string name="screen_unified_search_section_messages">"Messages"</string>
+    <string name="screen_unified_search_no_messages">"No messages found"</string>
 </resources>

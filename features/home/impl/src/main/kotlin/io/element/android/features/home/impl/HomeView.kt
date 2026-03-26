@@ -11,7 +11,6 @@
 package io.element.android.features.home.impl
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
@@ -41,7 +40,6 @@ import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 import dev.chrisbanes.haze.rememberHazeState
-import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.home.impl.components.HomeTopBar
 import io.element.android.features.home.impl.components.RoomListContentView
@@ -49,9 +47,7 @@ import io.element.android.features.home.impl.components.RoomListMenuAction
 import io.element.android.features.home.impl.model.RoomListRoomSummary
 import io.element.android.features.home.impl.roomlist.RoomListContextMenu
 import io.element.android.features.home.impl.roomlist.RoomListDeclineInviteMenu
-import io.element.android.features.home.impl.roomlist.RoomListEvent
 import io.element.android.features.home.impl.roomlist.RoomListState
-import io.element.android.features.home.impl.search.RoomListSearchView
 import io.element.android.features.home.impl.spacefilters.SpaceFiltersEvent
 import io.element.android.features.home.impl.spacefilters.SpaceFiltersState
 import io.element.android.features.home.impl.spacefilters.SpaceFiltersView
@@ -82,7 +78,7 @@ fun HomeView(
     onCreateSpaceClick: () -> Unit,
     onRoomSettingsClick: (roomId: RoomId) -> Unit,
     onMenuActionClick: (RoomListMenuAction) -> Unit,
-    onGlobalSearchClick: () -> Unit,
+    onSearchClick: () -> Unit,
     onReportRoomClick: (roomId: RoomId) -> Unit,
     onDeclineInviteAndBlockUser: (roomSummary: RoomListRoomSummary) -> Unit,
     acceptDeclineInviteView: @Composable () -> Unit,
@@ -122,17 +118,7 @@ fun HomeView(
             onStartChatClick = { if (firstThrottler.canHandle()) onStartChatClick() },
             onCreateSpaceClick = { if (firstThrottler.canHandle()) onCreateSpaceClick() },
             onMenuActionClick = onMenuActionClick,
-            onGlobalSearchClick = { if (firstThrottler.canHandle()) onGlobalSearchClick() },
-        )
-        // This overlaid view will only be visible when state.displaySearchResults is true
-        RoomListSearchView(
-            state = state.searchState,
-            eventSink = state.eventSink,
-            hideInvitesAvatars = state.hideInvitesAvatars,
-            onRoomClick = { if (firstThrottler.canHandle()) onRoomClick(it) },
-            modifier = Modifier
-                .fillMaxSize()
-                .background(ElementTheme.colors.bgCanvasDefault)
+            onSearchClick = { if (firstThrottler.canHandle()) onSearchClick() },
         )
         acceptDeclineInviteView()
     }
@@ -149,7 +135,7 @@ private fun HomeScaffold(
     onStartChatClick: () -> Unit,
     onCreateSpaceClick: () -> Unit,
     onMenuActionClick: (RoomListMenuAction) -> Unit,
-    onGlobalSearchClick: () -> Unit,
+    onSearchClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     fun onRoomClick(room: RoomListRoomSummary) {
@@ -183,9 +169,8 @@ private fun HomeScaffold(
                 selectedNavigationItem = state.currentHomeNavigationBarItem,
                 currentUserAndNeighbors = state.currentUserAndNeighbors,
                 showAvatarIndicator = state.showAvatarIndicator,
-                areSearchResultsDisplayed = roomListState.searchState.isSearchActive,
-                onToggleSearch = { roomListState.eventSink(RoomListEvent.ToggleSearchResults) },
-                onGlobalSearchClick = onGlobalSearchClick,
+                areSearchResultsDisplayed = false,
+                onSearchClick = onSearchClick,
                 onMenuActionClick = onMenuActionClick,
                 onOpenSettings = onOpenSettings,
                 onAccountSwitch = {
@@ -362,7 +347,7 @@ internal fun HomeViewPreview(@PreviewParameter(HomeStateProvider::class) state: 
         onRoomSettingsClick = {},
         onReportRoomClick = {},
         onMenuActionClick = {},
-        onGlobalSearchClick = {},
+        onSearchClick = {},
         onDeclineInviteAndBlockUser = {},
         acceptDeclineInviteView = {},
         leaveRoomView = {}
@@ -383,7 +368,7 @@ internal fun HomeViewA11yPreview() = ElementPreview {
         onRoomSettingsClick = {},
         onReportRoomClick = {},
         onMenuActionClick = {},
-        onGlobalSearchClick = {},
+        onSearchClick = {},
         onDeclineInviteAndBlockUser = {},
         acceptDeclineInviteView = {},
         leaveRoomView = {}

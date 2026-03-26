@@ -17,35 +17,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import dev.zacsweers.metro.Inject
 import io.element.android.libraries.architecture.Presenter
-import io.element.android.libraries.designsystem.components.avatar.AvatarData
-import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.matrix.api.MatrixClient
 import io.element.android.libraries.matrix.api.room.RoomInfo
 import io.element.android.libraries.matrix.api.room.search.GlobalSearchIterator
-import io.element.android.libraries.matrix.api.room.search.GlobalSearchResult
-import io.element.android.libraries.matrix.api.timeline.item.event.AudioMessageType
-import io.element.android.libraries.matrix.api.timeline.item.event.EventContent
-import io.element.android.libraries.matrix.api.timeline.item.event.FileMessageType
-import io.element.android.libraries.matrix.api.timeline.item.event.ImageMessageType
-import io.element.android.libraries.matrix.api.timeline.item.event.LegacyCallInviteContent
-import io.element.android.libraries.matrix.api.timeline.item.event.LiveLocationContent
-import io.element.android.libraries.matrix.api.timeline.item.event.LocationMessageType
-import io.element.android.libraries.matrix.api.timeline.item.event.MessageContent
-import io.element.android.libraries.matrix.api.timeline.item.event.PollContent
-import io.element.android.libraries.matrix.api.timeline.item.event.RedactedContent
-import io.element.android.libraries.matrix.api.timeline.item.event.StickerContent
-import io.element.android.libraries.matrix.api.timeline.item.event.UnableToDecryptContent
-import io.element.android.libraries.matrix.api.timeline.item.event.UnknownContent
-import io.element.android.libraries.matrix.api.timeline.item.event.VideoMessageType
-import io.element.android.libraries.matrix.api.timeline.item.event.VoiceMessageType
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class GlobalSearchPresenter @Inject constructor(
     private val client: MatrixClient,
@@ -115,59 +93,4 @@ class GlobalSearchPresenter @Inject constructor(
             eventSink = ::handleEvent,
         )
     }
-}
-
-private suspend fun GlobalSearchResult.toResultItem(
-    client: MatrixClient,
-    roomInfoCache: MutableMap<String, RoomInfo?>,
-): GlobalSearchResultItem {
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-
-    val roomInfo = roomInfoCache.getOrPut(roomId.value) {
-        client.getRoomInfoFlow(roomId).firstOrNull()?.orElse(null)
-    }
-
-    val roomDisplayName = roomInfo?.name ?: roomId.value
-    val roomAvatar = AvatarData(
-        id = roomId.value,
-        name = roomDisplayName,
-        url = roomInfo?.avatarUrl,
-        size = AvatarSize.TimelineRoom,
-    )
-
-    return GlobalSearchResultItem(
-        eventId = result.eventId,
-        roomId = roomId,
-        roomDisplayName = roomDisplayName,
-        roomAvatar = roomAvatar,
-        senderDisplayName = result.senderDisplayName ?: result.senderId.value,
-        senderAvatar = AvatarData(
-            id = result.senderId.value,
-            name = result.senderDisplayName,
-            url = result.senderAvatarUrl,
-            size = AvatarSize.TimelineRoom,
-        ),
-        contentDescription = result.content.toSearchDescription(),
-        formattedTimestamp = dateFormat.format(Date(result.timestamp)),
-    )
-}
-
-private fun EventContent.toSearchDescription(): String = when (this) {
-    is MessageContent -> when (val msgType = type) {
-        is ImageMessageType -> msgType.caption ?: "📷 Photo"
-        is VideoMessageType -> msgType.caption ?: "🎥 Video"
-        is FileMessageType -> "📎 ${msgType.filename}"
-        is AudioMessageType -> "🎵 Audio"
-        is VoiceMessageType -> "🎤 Voice message"
-        is LocationMessageType -> "📍 Location"
-        else -> body
-    }
-    is RedactedContent -> "Message deleted"
-    is StickerContent -> bestDescription
-    is PollContent -> "📊 $question"
-    is UnableToDecryptContent -> "Unable to decrypt"
-    is LiveLocationContent -> "📍 Location"
-    is LegacyCallInviteContent -> "Call invite"
-    is UnknownContent -> "Message"
-    else -> "Message"
 }
