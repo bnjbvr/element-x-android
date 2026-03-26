@@ -172,7 +172,7 @@ private fun GlobalSearchResultsList(
         }
     }
 
-    LaunchedEffect(shouldLoadMore) {
+    LaunchedEffect(shouldLoadMore, results.size) {
         if (shouldLoadMore) {
             onLoadMore()
         }

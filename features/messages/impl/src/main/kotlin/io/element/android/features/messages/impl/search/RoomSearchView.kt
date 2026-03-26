@@ -170,7 +170,7 @@ private fun SearchResultsList(
         }
     }
 
-    LaunchedEffect(shouldLoadMore) {
+    LaunchedEffect(shouldLoadMore, results.size) {
         if (shouldLoadMore) {
             onLoadMore()
         }
