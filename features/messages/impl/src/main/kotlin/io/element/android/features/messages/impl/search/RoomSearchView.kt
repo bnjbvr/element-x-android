@@ -85,6 +85,7 @@ fun RoomSearchView(
             SearchInputRow(
                 searchQuery = state.searchQuery,
                 onSearchClick = { state.eventSink(RoomSearchEvent.Search) },
+                onClearClick = { state.eventSink(RoomSearchEvent.Clear) },
             )
             SearchResultsList(
                 results = state.results,
@@ -102,6 +103,7 @@ fun RoomSearchView(
 private fun SearchInputRow(
     searchQuery: TextFieldState,
     onSearchClick: () -> Unit,
+    onClearClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -127,17 +129,29 @@ private fun SearchInputRow(
                     border = BorderStroke(1.dp, ElementTheme.colors.borderInteractiveSecondary),
                     color = ElementTheme.colors.bgSubtleSecondary,
                 ) {
-                    Box(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    Row(
+                        modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (searchQuery.text.isEmpty()) {
-                            Text(
-                                text = stringResource(CommonStrings.screen_room_search_placeholder),
-                                color = ElementTheme.colors.textSecondary,
-                                style = ElementTheme.typography.fontBodyLgRegular,
-                            )
+                        Box(modifier = Modifier.weight(1f).padding(vertical = 8.dp)) {
+                            if (searchQuery.text.isEmpty()) {
+                                Text(
+                                    text = stringResource(CommonStrings.screen_room_search_placeholder),
+                                    color = ElementTheme.colors.textSecondary,
+                                    style = ElementTheme.typography.fontBodyLgRegular,
+                                )
+                            }
+                            innerTextField()
                         }
-                        innerTextField()
+                        if (searchQuery.text.isNotEmpty()) {
+                            IconButton(onClick = onClearClick) {
+                                Icon(
+                                    imageVector = CompoundIcons.Close(),
+                                    contentDescription = stringResource(CommonStrings.action_clear),
+                                    tint = ElementTheme.colors.iconSecondary,
+                                )
+                            }
+                        }
                     }
                 }
             },
