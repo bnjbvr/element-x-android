@@ -33,6 +33,8 @@ import io.element.android.libraries.matrix.api.room.NotJoinedRoom
 import io.element.android.libraries.matrix.api.room.RoomInfo
 import io.element.android.libraries.matrix.api.room.RoomMembershipObserver
 import io.element.android.libraries.matrix.api.room.alias.ResolvedRoomAlias
+import io.element.android.libraries.matrix.api.room.search.GlobalSearchIterator
+import io.element.android.libraries.matrix.test.room.search.FakeGlobalSearchIterator
 import io.element.android.libraries.matrix.api.roomdirectory.RoomDirectoryService
 import io.element.android.libraries.matrix.api.roomlist.RoomListService
 import io.element.android.libraries.matrix.api.spaces.SpaceService
@@ -113,6 +115,7 @@ class FakeMatrixClient(
     private val performDatabaseVacuumLambda: () -> Result<Unit> = { lambdaError() },
     private val getDatabaseSizesLambda: () -> Result<SdkStoreSizes> = { lambdaError() },
     private val resetWellKnownConfigLambda: () -> Result<Unit> = { lambdaError() },
+    private val searchResult: (String) -> GlobalSearchIterator = { FakeGlobalSearchIterator() },
 ) : MatrixClient {
     var setDisplayNameCalled: Boolean = false
         private set
@@ -186,6 +189,10 @@ class FakeMatrixClient(
 
     override suspend fun searchUsers(searchTerm: String, limit: Long): Result<MatrixSearchUserResults> {
         return searchUserResults[searchTerm] ?: Result.failure(IllegalStateException("No response defined for $searchTerm"))
+    }
+
+    override suspend fun search(query: String): GlobalSearchIterator {
+        return searchResult(query)
     }
 
     override suspend fun getCacheSize(): Long {

@@ -39,6 +39,7 @@ import io.element.android.libraries.matrix.api.room.RoomInfo
 import io.element.android.libraries.matrix.api.room.RoomMember
 import io.element.android.libraries.matrix.api.room.RoomMembershipObserver
 import io.element.android.libraries.matrix.api.room.alias.ResolvedRoomAlias
+import io.element.android.libraries.matrix.api.room.search.GlobalSearchIterator
 import io.element.android.libraries.matrix.api.room.history.RoomHistoryVisibility
 import io.element.android.libraries.matrix.api.room.join.JoinRule
 import io.element.android.libraries.matrix.api.roomdirectory.RoomVisibility
@@ -66,6 +67,7 @@ import io.element.android.libraries.matrix.impl.room.RoomContentForwarder
 import io.element.android.libraries.matrix.impl.room.RoomInfoMapper
 import io.element.android.libraries.matrix.impl.room.RoomSyncSubscriber
 import io.element.android.libraries.matrix.impl.room.RustRoomFactory
+import io.element.android.libraries.matrix.impl.room.search.RustGlobalSearchIterator
 import io.element.android.libraries.matrix.impl.room.TimelineEventFilterFactory
 import io.element.android.libraries.matrix.impl.room.history.map
 import io.element.android.libraries.matrix.impl.room.join.map
@@ -115,6 +117,7 @@ import org.matrix.rustcomponents.sdk.AuthDataPasswordDetails
 import org.matrix.rustcomponents.sdk.Client
 import org.matrix.rustcomponents.sdk.ClientException
 import org.matrix.rustcomponents.sdk.IgnoredUsersListener
+import org.matrix.rustcomponents.sdk.SearchRoomFilter
 import org.matrix.rustcomponents.sdk.Membership
 import org.matrix.rustcomponents.sdk.NotificationProcessSetup
 import org.matrix.rustcomponents.sdk.PowerLevels
@@ -445,6 +448,11 @@ class RustMatrixClient(
             runCatchingExceptions {
                 innerClient.searchUsers(searchTerm, limit.toULong()).let(UserSearchResultMapper::map)
             }
+        }
+
+    override suspend fun search(query: String): GlobalSearchIterator =
+        withContext(sessionDispatcher) {
+            RustGlobalSearchIterator(innerClient.search(query, SearchRoomFilter.ALL_JOINED_ROOMS))
         }
 
     override suspend fun setDisplayName(displayName: String): Result<Unit> =

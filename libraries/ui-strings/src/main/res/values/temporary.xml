@@ -3,4 +3,8 @@
     <string name="screen_room_search_title">"Search messages"</string>
     <string name="screen_room_search_placeholder">"Search…"</string>
     <string name="screen_room_search_no_results">"No results found"</string>
+    <string name="screen_global_search_title">"Search messages"</string>
+    <string name="screen_global_search_placeholder">"Search across all rooms…"</string>
+    <string name="screen_global_search_no_results">"No messages found"</string>
+    <string name="a11y_global_search">"Search messages"</string>
 </resources>

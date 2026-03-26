@@ -34,6 +34,7 @@ import io.element.android.libraries.matrix.api.room.NotJoinedRoom
 import io.element.android.libraries.matrix.api.room.RoomInfo
 import io.element.android.libraries.matrix.api.room.RoomMembershipObserver
 import io.element.android.libraries.matrix.api.room.alias.ResolvedRoomAlias
+import io.element.android.libraries.matrix.api.room.search.GlobalSearchIterator
 import io.element.android.libraries.matrix.api.roomdirectory.RoomDirectoryService
 import io.element.android.libraries.matrix.api.roomlist.RoomListService
 import io.element.android.libraries.matrix.api.spaces.SpaceService
@@ -77,6 +78,7 @@ interface MatrixClient {
     suspend fun createDM(userId: UserId): Result<RoomId>
     suspend fun getProfile(userId: UserId): Result<MatrixUser>
     suspend fun searchUsers(searchTerm: String, limit: Long): Result<MatrixSearchUserResults>
+    suspend fun search(query: String): GlobalSearchIterator
     suspend fun setDisplayName(displayName: String): Result<Unit>
     suspend fun uploadAvatar(mimeType: String, data: ByteArray): Result<Unit>
     suspend fun removeAvatar(): Result<Unit>
