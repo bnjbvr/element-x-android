@@ -39,6 +39,7 @@ class RoomSearchPresenter @Inject constructor(
         var results by remember { mutableStateOf<ImmutableList<RoomSearchResultItem>>(persistentListOf()) }
         var isSearching by remember { mutableStateOf(false) }
         var hasMoreResults by remember { mutableStateOf(false) }
+        var hasSearched by remember { mutableStateOf(false) }
         var currentIterator by remember { mutableStateOf<RoomSearchIterator?>(null) }
         val coroutineScope = rememberCoroutineScope()
 
@@ -56,12 +57,14 @@ class RoomSearchPresenter @Inject constructor(
                         results = batch?.map { it.toResultItem() }?.toImmutableList() ?: persistentListOf()
                         hasMoreResults = batch != null && batch.isNotEmpty()
                         isSearching = false
+                        hasSearched = true
                     }
                 }
                 is RoomSearchEvent.Clear -> {
                     searchQuery.clearText()
                     results = persistentListOf()
                     hasMoreResults = false
+                    hasSearched = false
                     currentIterator = null
                 }
                 is RoomSearchEvent.LoadMore -> {
@@ -86,6 +89,7 @@ class RoomSearchPresenter @Inject constructor(
             results = results,
             isSearching = isSearching,
             hasMoreResults = hasMoreResults,
+            hasSearched = hasSearched,
             eventSink = ::handleEvent,
         )
     }

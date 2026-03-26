@@ -28,6 +28,7 @@ class RoomSearchPresenterTest {
             assertThat(initialState.results).isEmpty()
             assertThat(initialState.isSearching).isFalse()
             assertThat(initialState.hasMoreResults).isFalse()
+            assertThat(initialState.hasSearched).isFalse()
             assertThat(initialState.searchQuery.text.toString()).isEmpty()
         }
     }
@@ -47,6 +48,7 @@ class RoomSearchPresenterTest {
             val searchingState = awaitItem()
             assertThat(searchingState.results).hasSize(1)
             assertThat(searchingState.isSearching).isFalse()
+            assertThat(searchingState.hasSearched).isTrue()
         }
     }
 
@@ -69,6 +71,7 @@ class RoomSearchPresenterTest {
             val clearedState = awaitItem()
             assertThat(clearedState.results).isEmpty()
             assertThat(clearedState.searchQuery.text.toString()).isEmpty()
+            assertThat(clearedState.hasSearched).isFalse()
         }
     }
 

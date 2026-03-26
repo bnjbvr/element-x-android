@@ -29,6 +29,7 @@ fun anEmptyRoomSearchState() = RoomSearchState(
     results = persistentListOf(),
     isSearching = false,
     hasMoreResults = false,
+    hasSearched = false,
     eventSink = {},
 )
 
@@ -37,6 +38,7 @@ fun aSearchingRoomSearchState() = RoomSearchState(
     results = persistentListOf(),
     isSearching = true,
     hasMoreResults = false,
+    hasSearched = false,
     eventSink = {},
 )
 
@@ -67,6 +69,7 @@ fun aRoomSearchStateWithResults() = RoomSearchState(
     ).toImmutableList(),
     isSearching = false,
     hasMoreResults = true,
+    hasSearched = true,
     eventSink = {},
 )
 
@@ -75,5 +78,6 @@ fun aRoomSearchStateNoResults() = RoomSearchState(
     results = persistentListOf(),
     isSearching = false,
     hasMoreResults = false,
+    hasSearched = true,
     eventSink = {},
 )

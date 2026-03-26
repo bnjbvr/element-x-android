@@ -80,6 +80,7 @@ fun RoomSearchView(
                 results = state.results,
                 isSearching = state.isSearching,
                 hasMoreResults = state.hasMoreResults,
+                hasSearched = state.hasSearched,
                 onLoadMore = { state.eventSink(RoomSearchEvent.LoadMore) },
             )
         }
@@ -127,6 +128,7 @@ private fun SearchResultsList(
     results: List<RoomSearchResultItem>,
     isSearching: Boolean,
     hasMoreResults: Boolean,
+    hasSearched: Boolean,
     onLoadMore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -169,7 +171,7 @@ private fun SearchResultsList(
                 }
             }
         }
-        if (!isSearching && results.isEmpty()) {
+        if (!isSearching && results.isEmpty() && hasSearched) {
             item {
                 Text(
                     text = stringResource(CommonStrings.screen_room_search_no_results),

@@ -15,5 +15,6 @@ data class RoomSearchState(
     val results: ImmutableList<RoomSearchResultItem>,
     val isSearching: Boolean,
     val hasMoreResults: Boolean,
+    val hasSearched: Boolean,
     val eventSink: (RoomSearchEvent) -> Unit,
 )
