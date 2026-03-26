@@ -443,7 +443,12 @@ class MessagesFlowNode(
                 knockRequestsListEntryPoint.createNode(this, buildContext)
             }
             NavTarget.RoomSearch -> {
-                createNode<RoomSearchNode>(buildContext)
+                val callback = object : RoomSearchNode.Callback {
+                    override fun viewInTimeline(eventId: EventId) {
+                        this@MessagesFlowNode.viewInTimeline(eventId)
+                    }
+                }
+                createNode<RoomSearchNode>(buildContext, plugins = listOf(callback))
             }
             is NavTarget.Thread -> {
                 val inputs = ThreadedMessagesNode.Inputs(

@@ -48,6 +48,7 @@ import io.element.android.libraries.designsystem.theme.components.Scaffold
 import io.element.android.libraries.designsystem.theme.components.SearchField
 import io.element.android.libraries.designsystem.theme.components.Text
 import io.element.android.libraries.designsystem.theme.components.TopAppBar
+import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.ui.strings.CommonStrings
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,6 +56,7 @@ import io.element.android.libraries.ui.strings.CommonStrings
 fun RoomSearchView(
     state: RoomSearchState,
     onBackClick: () -> Unit,
+    onResultClick: (EventId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -82,6 +84,7 @@ fun RoomSearchView(
                 hasMoreResults = state.hasMoreResults,
                 hasSearched = state.hasSearched,
                 onLoadMore = { state.eventSink(RoomSearchEvent.LoadMore) },
+                onResultClick = onResultClick,
             )
         }
     }
@@ -130,6 +133,7 @@ private fun SearchResultsList(
     hasMoreResults: Boolean,
     hasSearched: Boolean,
     onLoadMore: () -> Unit,
+    onResultClick: (EventId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val lazyListState = rememberLazyListState()
@@ -156,7 +160,7 @@ private fun SearchResultsList(
             items = results,
             key = { it.eventId.value },
         ) { item ->
-            SearchResultRow(item = item)
+            SearchResultRow(item = item, onClick = { onResultClick(item.eventId) })
             HorizontalDivider()
         }
         if (isSearching) {
@@ -190,12 +194,13 @@ private fun SearchResultsList(
 @Composable
 private fun SearchResultRow(
     item: RoomSearchResultItem,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { }
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -240,5 +245,6 @@ internal fun RoomSearchViewPreview(
     RoomSearchView(
         state = state,
         onBackClick = {},
+        onResultClick = {},
     )
 }

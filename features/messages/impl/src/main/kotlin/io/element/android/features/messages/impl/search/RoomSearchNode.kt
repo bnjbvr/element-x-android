@@ -15,7 +15,9 @@ import com.bumble.appyx.core.plugin.Plugin
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedInject
 import io.element.android.annotations.ContributesNode
+import io.element.android.libraries.architecture.callback
 import io.element.android.libraries.di.RoomScope
+import io.element.android.libraries.matrix.api.core.EventId
 
 @ContributesNode(RoomScope::class)
 @AssistedInject
@@ -24,12 +26,19 @@ class RoomSearchNode(
     @Assisted plugins: List<Plugin>,
     private val presenter: RoomSearchPresenter,
 ) : Node(buildContext, plugins = plugins) {
+    interface Callback : Plugin {
+        fun viewInTimeline(eventId: EventId)
+    }
+
+    private val callback: Callback = callback()
+
     @Composable
     override fun View(modifier: Modifier) {
         val state = presenter.present()
         RoomSearchView(
             state = state,
             onBackClick = ::navigateUp,
+            onResultClick = { eventId -> callback.viewInTimeline(eventId) },
             modifier = modifier,
         )
     }
