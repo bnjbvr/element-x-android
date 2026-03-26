@@ -41,6 +41,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -66,11 +67,18 @@ class RoomSearchPresenter @Inject constructor(
                     coroutineScope.launch {
                         isSearching = true
                         results = persistentListOf()
-                        val iterator = room.search(query)
-                        currentIterator = iterator
-                        val batch = iterator.nextBatch()
-                        results = batch?.map { it.toResultItem() }?.toImmutableList() ?: persistentListOf()
-                        hasMoreResults = batch != null && batch.isNotEmpty()
+                        try {
+                            val iterator = room.search(query)
+                            currentIterator = iterator
+                            val batch = iterator.nextBatch()
+                            results = batch?.map { it.toResultItem() }?.toImmutableList() ?: persistentListOf()
+                            hasMoreResults = batch != null && batch.isNotEmpty()
+                        } catch (e: Exception) {
+                            Timber.e(e, "Room search failed")
+                            results = persistentListOf()
+                            hasMoreResults = false
+                            currentIterator = null
+                        }
                         isSearching = false
                         hasSearched = true
                     }
@@ -86,11 +94,16 @@ class RoomSearchPresenter @Inject constructor(
                     val iterator = currentIterator ?: return
                     coroutineScope.launch {
                         isSearching = true
-                        val batch = iterator.nextBatch()
-                        if (batch != null) {
-                            results = (results + batch.map { it.toResultItem() }).toImmutableList()
-                            hasMoreResults = batch.isNotEmpty()
-                        } else {
+                        try {
+                            val batch = iterator.nextBatch()
+                            if (batch != null) {
+                                results = (results + batch.map { it.toResultItem() }).toImmutableList()
+                                hasMoreResults = batch.isNotEmpty()
+                            } else {
+                                hasMoreResults = false
+                            }
+                        } catch (e: Exception) {
+                            Timber.e(e, "Room search load more failed")
                             hasMoreResults = false
                         }
                         isSearching = false

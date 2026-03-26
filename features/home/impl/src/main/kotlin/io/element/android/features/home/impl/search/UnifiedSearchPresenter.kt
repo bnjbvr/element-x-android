@@ -49,6 +49,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -93,11 +94,18 @@ class UnifiedSearchPresenter @Inject constructor(
                     isSearchingMessages = true
                     messageResults = persistentListOf()
                     roomInfoCache.clear()
-                    val iterator = client.search(query)
-                    currentIterator = iterator
-                    val batch = iterator.nextBatch()
-                    messageResults = batch?.map { it.toResultItem(client, roomInfoCache) }?.toImmutableList() ?: persistentListOf()
-                    hasMoreMessages = batch != null && batch.isNotEmpty()
+                    try {
+                        val iterator = client.search(query)
+                        currentIterator = iterator
+                        val batch = iterator.nextBatch()
+                        messageResults = batch?.map { it.toResultItem(client, roomInfoCache) }?.toImmutableList() ?: persistentListOf()
+                        hasMoreMessages = batch != null && batch.isNotEmpty()
+                    } catch (e: Exception) {
+                        Timber.e(e, "Global message search failed")
+                        messageResults = persistentListOf()
+                        hasMoreMessages = false
+                        currentIterator = null
+                    }
                     isSearchingMessages = false
                     hasSearchedMessages = true
                 }
@@ -121,11 +129,16 @@ class UnifiedSearchPresenter @Inject constructor(
                     val iterator = currentIterator ?: return
                     coroutineScope.launch {
                         isSearchingMessages = true
-                        val batch = iterator.nextBatch()
-                        if (batch != null) {
-                            messageResults = (messageResults + batch.map { it.toResultItem(client, roomInfoCache) }).toImmutableList()
-                            hasMoreMessages = batch.isNotEmpty()
-                        } else {
+                        try {
+                            val batch = iterator.nextBatch()
+                            if (batch != null) {
+                                messageResults = (messageResults + batch.map { it.toResultItem(client, roomInfoCache) }).toImmutableList()
+                                hasMoreMessages = batch.isNotEmpty()
+                            } else {
+                                hasMoreMessages = false
+                            }
+                        } catch (e: Exception) {
+                            Timber.e(e, "Global message search load more failed")
                             hasMoreMessages = false
                         }
                         isSearchingMessages = false

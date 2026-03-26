@@ -24,6 +24,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class GlobalSearchPresenter @Inject constructor(
     private val client: MatrixClient,
@@ -50,11 +51,18 @@ class GlobalSearchPresenter @Inject constructor(
                         isSearching = true
                         results = persistentListOf()
                         roomInfoCache.clear()
-                        val iterator = client.search(query)
-                        currentIterator = iterator
-                        val batch = iterator.nextBatch()
-                        results = batch?.map { it.toResultItem(client, roomInfoCache) }?.toImmutableList() ?: persistentListOf()
-                        hasMoreResults = batch != null && batch.isNotEmpty()
+                        try {
+                            val iterator = client.search(query)
+                            currentIterator = iterator
+                            val batch = iterator.nextBatch()
+                            results = batch?.map { it.toResultItem(client, roomInfoCache) }?.toImmutableList() ?: persistentListOf()
+                            hasMoreResults = batch != null && batch.isNotEmpty()
+                        } catch (e: Exception) {
+                            Timber.e(e, "Global search failed")
+                            results = persistentListOf()
+                            hasMoreResults = false
+                            currentIterator = null
+                        }
                         isSearching = false
                         hasSearched = true
                     }
@@ -71,11 +79,16 @@ class GlobalSearchPresenter @Inject constructor(
                     val iterator = currentIterator ?: return
                     coroutineScope.launch {
                         isSearching = true
-                        val batch = iterator.nextBatch()
-                        if (batch != null) {
-                            results = (results + batch.map { it.toResultItem(client, roomInfoCache) }).toImmutableList()
-                            hasMoreResults = batch.isNotEmpty()
-                        } else {
+                        try {
+                            val batch = iterator.nextBatch()
+                            if (batch != null) {
+                                results = (results + batch.map { it.toResultItem(client, roomInfoCache) }).toImmutableList()
+                                hasMoreResults = batch.isNotEmpty()
+                            } else {
+                                hasMoreResults = false
+                            }
+                        } catch (e: Exception) {
+                            Timber.e(e, "Global search load more failed")
                             hasMoreResults = false
                         }
                         isSearching = false
