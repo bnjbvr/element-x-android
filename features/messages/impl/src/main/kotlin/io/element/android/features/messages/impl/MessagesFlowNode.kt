@@ -445,7 +445,9 @@ class MessagesFlowNode(
             NavTarget.RoomSearch -> {
                 val callback = object : RoomSearchNode.Callback {
                     override fun viewInTimeline(eventId: EventId) {
-                        this@MessagesFlowNode.viewInTimeline(eventId)
+                        // Push a focused Messages node on top of the RoomSearch so that
+                        // pressing back returns to the search results instead of the room list.
+                        backstack.push(NavTarget.Messages(focusedEventId = eventId))
                     }
                 }
                 createNode<RoomSearchNode>(buildContext, plugins = listOf(callback))
