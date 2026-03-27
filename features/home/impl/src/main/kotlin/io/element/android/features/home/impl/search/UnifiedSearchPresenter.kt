@@ -105,7 +105,7 @@ class UnifiedSearchPresenter(
                 is UnifiedSearchEvent.Clear -> {
                     searchQuery.clearText()
                     coroutineScope.launch {
-                        search(
+                        currentIterator = search(
                             query = "",
                             roomInfoCache = roomInfoCache,
                             searchResults = searchMessagesResults,
@@ -156,17 +156,11 @@ class UnifiedSearchPresenter(
         searchResults.value = AsyncData.Loading()
 
         var iterator: GlobalSearchIterator? = null
-        val maxIterations = 20
         runCatchingExceptions {
             iterator = client.search(query)
             val results = mutableListOf<GlobalSearchResultItem>()
-            repeat(maxIterations) {
-                val batch = iterator.nextBatch()?.map { it.toResultItem(client, dateFormatter, roomInfoCache) } ?: return@repeat
-                results += batch
-                // Display intermediate results before loading the full set, to improve perceived performance
-                searchResults.value = AsyncData.Loading(prevData = results.toImmutableList())
-            }
-            results
+            val batch = iterator.nextBatch()?.map { it.toResultItem(client, dateFormatter, roomInfoCache) }.orEmpty()
+            results + batch
         }
             .onSuccess { results ->
                 searchResults.value = AsyncData.Success(results.toImmutableList())
@@ -186,7 +180,7 @@ class UnifiedSearchPresenter(
         searchResults: MutableState<AsyncData<ImmutableList<GlobalSearchResultItem>>>,
         hasMoreResults: MutableState<Boolean>,
     ) {
-        searchResults.value = AsyncData.Loading()
+        searchResults.value = AsyncData.Loading(prevData = searchResults.value.dataOrNull())
         runCatchingExceptions {
             iterator.nextBatch().orEmpty()
         }
