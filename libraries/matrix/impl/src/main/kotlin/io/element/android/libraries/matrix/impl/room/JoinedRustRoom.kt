@@ -34,6 +34,7 @@ import io.element.android.libraries.matrix.api.room.location.LiveLocationShare
 import io.element.android.libraries.matrix.api.room.powerlevels.RoomPowerLevelsValues
 import io.element.android.libraries.matrix.api.room.powerlevels.UserRoleChange
 import io.element.android.libraries.matrix.api.room.roomNotificationSettings
+import io.element.android.libraries.matrix.api.room.search.RoomSearchIterator
 import io.element.android.libraries.matrix.api.roomdirectory.RoomVisibility
 import io.element.android.libraries.matrix.api.timeline.Timeline
 import io.element.android.libraries.matrix.api.widget.MatrixWidgetDriver
@@ -45,6 +46,7 @@ import io.element.android.libraries.matrix.impl.room.join.map
 import io.element.android.libraries.matrix.impl.room.knock.RustKnockRequest
 import io.element.android.libraries.matrix.impl.room.location.map
 import io.element.android.libraries.matrix.impl.room.member.RoomMemberListFetcher
+import io.element.android.libraries.matrix.impl.room.search.RustRoomSearchIterator
 import io.element.android.libraries.matrix.impl.roomdirectory.map
 import io.element.android.libraries.matrix.impl.timeline.RustTimeline
 import io.element.android.libraries.matrix.impl.util.MessageEventContent
@@ -529,6 +531,10 @@ class JoinedRustRoom(
         runCatchingExceptions {
             innerRoom.sendLiveLocation(geoUri)
         }
+    }
+
+    override fun search(query: String): RoomSearchIterator {
+        return RustRoomSearchIterator(innerRoom.search(query))
     }
 
     override fun close() = destroy()

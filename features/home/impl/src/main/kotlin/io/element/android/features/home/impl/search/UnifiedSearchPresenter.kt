@@ -11,15 +11,21 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import dev.zacsweers.metro.Inject
+import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.architecture.Presenter
+import io.element.android.libraries.core.extensions.runCatchingExceptions
+import io.element.android.libraries.dateformatter.api.DateFormatter
+import io.element.android.libraries.dateformatter.api.DateFormatterMode
 import io.element.android.libraries.designsystem.components.avatar.AvatarData
 import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.matrix.api.MatrixClient
@@ -50,27 +56,25 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
-private const val MESSAGE_SEARCH_DEBOUNCE_MS = 100L
+private const val MESSAGE_SEARCH_DEBOUNCE_MS = 750L
 
-class UnifiedSearchPresenter @Inject constructor(
+@Inject
+class UnifiedSearchPresenter(
     private val client: MatrixClient,
     private val dataSourceFactory: RoomListSearchDataSource.Factory,
+    private val dateFormatter: DateFormatter,
 ) : Presenter<UnifiedSearchState> {
     @OptIn(FlowPreview::class)
     @Composable
     override fun present(): UnifiedSearchState {
         val searchQuery = remember { TextFieldState() }
-        var messageResults by remember { mutableStateOf<ImmutableList<GlobalSearchResultItem>>(persistentListOf()) }
-        var isSearchingMessages by remember { mutableStateOf(false) }
-        var hasSearchedMessages by remember { mutableStateOf(false) }
-        var hasMoreMessages by remember { mutableStateOf(false) }
+        val hasMoreMessages = remember { mutableStateOf(false) }
         var currentIterator by remember { mutableStateOf<GlobalSearchIterator?>(null) }
-        val roomInfoCache = remember { mutableMapOf<String, RoomInfo?>() }
+        val roomInfoCache = remember { mutableStateMapOf<String, RoomInfo>() }
         val coroutineScope = rememberCoroutineScope()
+
+        val searchMessagesResults = remember { mutableStateOf<AsyncData<ImmutableList<GlobalSearchResultItem>>>(AsyncData.Uninitialized) }
 
         // Room filtering — instant, per-keystroke
         val roomDataSource = remember { dataSourceFactory.create(coroutineScope) }
@@ -79,74 +83,45 @@ class UnifiedSearchPresenter @Inject constructor(
         }
         val roomResults by roomDataSource.roomSummaries.collectAsState(initial = persistentListOf())
 
-        // Message search — debounced auto-trigger
-        // A counter to force immediate search when the Search button is pressed
-        var immediateSearchTrigger by remember { mutableStateOf(0) }
-
         LaunchedEffect(Unit) {
-            snapshotFlow { searchQuery.text.toString().trim() to immediateSearchTrigger }
-                .debounce { (query, _) ->
+            snapshotFlow { searchQuery.text.toString().trim() }
+                .distinctUntilChanged()
+                .debounce { query, ->
                     if (query.isBlank()) 0L else MESSAGE_SEARCH_DEBOUNCE_MS
                 }
-                .distinctUntilChanged { old, new -> old.first == new.first }
-                .collect { (query, _) ->
-                    if (query.isBlank()) {
-                        messageResults = persistentListOf()
-                        hasMoreMessages = false
-                        hasSearchedMessages = false
-                        currentIterator = null
-                        return@collect
-                    }
-                    isSearchingMessages = true
+                .collect { query ->
                     roomInfoCache.clear()
-                    try {
-                        val iterator = client.search(query)
-                        currentIterator = iterator
-                        val batch = iterator.nextBatch()
-                        messageResults = batch?.map { it.toResultItem(client, roomInfoCache) }?.toImmutableList() ?: persistentListOf()
-                        hasMoreMessages = batch != null && batch.isNotEmpty()
-                    } catch (e: Exception) {
-                        Timber.e(e, "Global message search failed")
-                        messageResults = persistentListOf()
-                        hasMoreMessages = false
-                        currentIterator = null
-                    }
-                    isSearchingMessages = false
-                    hasSearchedMessages = true
+                    currentIterator = search(
+                        query = query,
+                        roomInfoCache = roomInfoCache,
+                        searchResults = searchMessagesResults,
+                        hasMoreResults = hasMoreMessages,
+                    )
                 }
         }
 
         fun handleEvent(event: UnifiedSearchEvent) {
             when (event) {
-                is UnifiedSearchEvent.SearchMessages -> {
-                    // Bump the trigger to force the debounced flow to re-emit immediately
-                    immediateSearchTrigger++
-                }
                 is UnifiedSearchEvent.Clear -> {
                     searchQuery.clearText()
-                    messageResults = persistentListOf()
-                    hasMoreMessages = false
-                    hasSearchedMessages = false
-                    currentIterator = null
-                    roomInfoCache.clear()
+                    coroutineScope.launch {
+                        search(
+                            query = "",
+                            roomInfoCache = roomInfoCache,
+                            searchResults = searchMessagesResults,
+                            hasMoreResults = hasMoreMessages,
+                        )
+                    }
                 }
                 is UnifiedSearchEvent.LoadMoreMessages -> {
                     val iterator = currentIterator ?: return
                     coroutineScope.launch {
-                        isSearchingMessages = true
-                        try {
-                            val batch = iterator.nextBatch()
-                            if (batch != null) {
-                                messageResults = (messageResults + batch.map { it.toResultItem(client, roomInfoCache) }).toImmutableList()
-                                hasMoreMessages = batch.isNotEmpty()
-                            } else {
-                                hasMoreMessages = false
-                            }
-                        } catch (e: Exception) {
-                            Timber.e(e, "Global message search load more failed")
-                            hasMoreMessages = false
-                        }
-                        isSearchingMessages = false
+                        loadMore(
+                            iterator = iterator,
+                            roomInfoCache = roomInfoCache,
+                            searchResults = searchMessagesResults,
+                            hasMoreResults = hasMoreMessages,
+                        )
                     }
                 }
                 is UnifiedSearchEvent.UpdateVisibleRange -> coroutineScope.launch {
@@ -158,23 +133,86 @@ class UnifiedSearchPresenter @Inject constructor(
         return UnifiedSearchState(
             searchQuery = searchQuery,
             roomResults = roomResults,
-            messageResults = messageResults,
-            isSearchingMessages = isSearchingMessages,
-            hasSearchedMessages = hasSearchedMessages,
-            hasMoreMessages = hasMoreMessages,
+            messageResults = searchMessagesResults.value,
+            hasMoreMessages = hasMoreMessages.value,
             eventSink = ::handleEvent,
         )
+    }
+
+    private suspend fun search(
+        query: String,
+        roomInfoCache: MutableMap<String, RoomInfo>,
+        searchResults: MutableState<AsyncData<ImmutableList<GlobalSearchResultItem>>>,
+        hasMoreResults: MutableState<Boolean>,
+    ): GlobalSearchIterator? {
+        roomInfoCache.clear()
+
+        if (query.isBlank()) {
+            searchResults.value = AsyncData.Uninitialized
+            hasMoreResults.value = false
+            return null
+        }
+
+        searchResults.value = AsyncData.Loading()
+
+        var iterator: GlobalSearchIterator? = null
+        val maxIterations = 20
+        runCatchingExceptions {
+            iterator = client.search(query)
+            val results = mutableListOf<GlobalSearchResultItem>()
+            repeat(maxIterations) {
+                val batch = iterator.nextBatch()?.map { it.toResultItem(client, dateFormatter, roomInfoCache) } ?: return@repeat
+                results += batch
+                // Display intermediate results before loading the full set, to improve perceived performance
+                searchResults.value = AsyncData.Loading(prevData = results.toImmutableList())
+            }
+            results
+        }
+            .onSuccess { results ->
+                searchResults.value = AsyncData.Success(results.toImmutableList())
+                hasMoreResults.value = results.isNotEmpty()
+            }
+            .onFailure {
+                Timber.e(it, "Global message search failed")
+                searchResults.value = AsyncData.Failure(it)
+                hasMoreResults.value = false
+            }
+        return iterator
+    }
+
+    private suspend fun loadMore(
+        iterator: GlobalSearchIterator,
+        roomInfoCache: MutableMap<String, RoomInfo>,
+        searchResults: MutableState<AsyncData<ImmutableList<GlobalSearchResultItem>>>,
+        hasMoreResults: MutableState<Boolean>,
+    ) {
+        searchResults.value = AsyncData.Loading()
+        runCatchingExceptions {
+            iterator.nextBatch().orEmpty()
+        }
+            .onSuccess { batch ->
+                val currentResults = searchResults.value.dataOrNull().orEmpty()
+                val newItems = batch.map { it.toResultItem(client, dateFormatter, roomInfoCache) }
+                searchResults.value = AsyncData.Success((currentResults + newItems).toImmutableList())
+                hasMoreResults.value = batch.isNotEmpty()
+            }
+            .onFailure {
+                Timber.e(it, "Global message search load more failed")
+                searchResults.value = AsyncData.Failure(it)
+                hasMoreResults.value = false
+            }
     }
 }
 
 internal suspend fun GlobalSearchResult.toResultItem(
     client: MatrixClient,
-    roomInfoCache: MutableMap<String, RoomInfo?>,
+    dateFormatter: DateFormatter,
+    roomInfoCache: MutableMap<String, RoomInfo>,
 ): GlobalSearchResultItem {
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-
-    val roomInfo = roomInfoCache.getOrPut(roomId.value) {
-        client.getRoomInfoFlow(roomId).firstOrNull()?.orElse(null)
+    var roomInfo = roomInfoCache[roomId.value]
+    if (roomInfo == null) {
+        roomInfo = client.getRoomInfoFlow(roomId).firstOrNull()?.orElse(null)
+        roomInfo?.let { roomInfoCache[roomId.value] = it }
     }
 
     val roomDisplayName = roomInfo?.name ?: roomId.value
@@ -182,7 +220,7 @@ internal suspend fun GlobalSearchResult.toResultItem(
         id = roomId.value,
         name = roomDisplayName,
         url = roomInfo?.avatarUrl,
-        size = AvatarSize.TimelineRoom,
+        size = AvatarSize.SearchResultRoomAvatar,
     )
 
     return GlobalSearchResultItem(
@@ -198,7 +236,7 @@ internal suspend fun GlobalSearchResult.toResultItem(
             size = AvatarSize.TimelineRoom,
         ),
         contentDescription = result.content.toSearchDescription(),
-        formattedTimestamp = dateFormat.format(Date(result.timestamp)),
+        formattedTimestamp = dateFormatter.format(result.timestamp, DateFormatterMode.TimeOrDate, useRelative = true)
     )
 }
 

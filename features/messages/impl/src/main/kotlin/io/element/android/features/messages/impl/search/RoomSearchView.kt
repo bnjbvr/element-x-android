@@ -44,6 +44,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import io.element.android.compound.theme.ElementTheme
 import io.element.android.compound.tokens.generated.CompoundIcons
+import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.designsystem.components.avatar.Avatar
 import io.element.android.libraries.designsystem.components.avatar.AvatarType
 import io.element.android.libraries.designsystem.components.button.BackButton
@@ -59,6 +60,7 @@ import io.element.android.libraries.designsystem.theme.components.Text
 import io.element.android.libraries.designsystem.theme.components.TopAppBar
 import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.ui.strings.CommonStrings
+import kotlinx.collections.immutable.persistentListOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,14 +86,13 @@ fun RoomSearchView(
         ) {
             SearchInputRow(
                 searchQuery = state.searchQuery,
-                onSearchClick = { state.eventSink(RoomSearchEvent.Search) },
                 onClearClick = { state.eventSink(RoomSearchEvent.Clear) },
             )
             SearchResultsList(
-                results = state.results,
-                isSearching = state.isSearching,
+                results = state.searchResults.dataOrNull() ?: persistentListOf(),
+                isSearching = state.searchResults.isLoading(),
                 hasMoreResults = state.hasMoreResults,
-                hasSearched = state.hasSearched,
+                hasSearched = state.searchResults is AsyncData.Success,
                 onLoadMore = { state.eventSink(RoomSearchEvent.LoadMore) },
                 onResultClick = onResultClick,
             )
@@ -102,7 +103,6 @@ fun RoomSearchView(
 @Composable
 private fun SearchInputRow(
     searchQuery: TextFieldState,
-    onSearchClick: () -> Unit,
     onClearClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -121,7 +121,6 @@ private fun SearchInputRow(
             ),
             lineLimits = TextFieldLineLimits.SingleLine,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            onKeyboardAction = { onSearchClick() },
             cursorBrush = SolidColor(ElementTheme.colors.textActionAccent),
             decorator = { innerTextField ->
                 Surface(

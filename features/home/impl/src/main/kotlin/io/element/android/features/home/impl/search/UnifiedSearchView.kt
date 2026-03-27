@@ -14,10 +14,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -49,6 +52,7 @@ import io.element.android.compound.tokens.generated.CompoundIcons
 import io.element.android.features.home.impl.components.RoomSummaryRow
 import io.element.android.features.home.impl.model.RoomListRoomSummary
 import io.element.android.features.home.impl.roomlist.RoomListEvent
+import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.designsystem.components.avatar.Avatar
 import io.element.android.libraries.designsystem.components.avatar.AvatarType
 import io.element.android.libraries.designsystem.components.button.BackButton
@@ -65,6 +69,7 @@ import io.element.android.libraries.designsystem.theme.components.TopAppBar
 import io.element.android.libraries.matrix.api.core.EventId
 import io.element.android.libraries.matrix.api.core.RoomId
 import io.element.android.libraries.ui.strings.CommonStrings
+import kotlinx.collections.immutable.ImmutableList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,14 +96,11 @@ fun UnifiedSearchView(
         ) {
             UnifiedSearchInputRow(
                 searchQuery = state.searchQuery,
-                onSearchClick = { state.eventSink(UnifiedSearchEvent.SearchMessages) },
                 onClearClick = { state.eventSink(UnifiedSearchEvent.Clear) },
             )
             UnifiedSearchResults(
                 roomResults = state.roomResults,
                 messageResults = state.messageResults,
-                isSearchingMessages = state.isSearchingMessages,
-                hasSearchedMessages = state.hasSearchedMessages,
                 hasMoreMessages = state.hasMoreMessages,
                 onLoadMoreMessages = { state.eventSink(UnifiedSearchEvent.LoadMoreMessages) },
                 onRoomClick = onRoomClick,
@@ -111,7 +113,6 @@ fun UnifiedSearchView(
 @Composable
 private fun UnifiedSearchInputRow(
     searchQuery: TextFieldState,
-    onSearchClick: () -> Unit,
     onClearClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -130,7 +131,6 @@ private fun UnifiedSearchInputRow(
             ),
             lineLimits = TextFieldLineLimits.SingleLine,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            onKeyboardAction = { onSearchClick() },
             cursorBrush = SolidColor(ElementTheme.colors.textActionAccent),
             decorator = { innerTextField ->
                 Surface(
@@ -153,7 +153,10 @@ private fun UnifiedSearchInputRow(
                             innerTextField()
                         }
                         if (searchQuery.text.isNotEmpty()) {
-                            IconButton(onClick = onClearClick) {
+                            IconButton(
+                                modifier = Modifier.padding(end = 8.dp).requiredSize(20.dp),
+                                onClick = onClearClick,
+                            ) {
                                 Icon(
                                     imageVector = CompoundIcons.Close(),
                                     contentDescription = stringResource(CommonStrings.action_clear),
@@ -170,10 +173,8 @@ private fun UnifiedSearchInputRow(
 
 @Composable
 private fun UnifiedSearchResults(
-    roomResults: List<RoomListRoomSummary>,
-    messageResults: List<GlobalSearchResultItem>,
-    isSearchingMessages: Boolean,
-    hasSearchedMessages: Boolean,
+    roomResults: ImmutableList<RoomListRoomSummary>,
+    messageResults: AsyncData<ImmutableList<GlobalSearchResultItem>>,
     hasMoreMessages: Boolean,
     onLoadMoreMessages: () -> Unit,
     onRoomClick: (RoomId) -> Unit,
@@ -182,7 +183,7 @@ private fun UnifiedSearchResults(
 ) {
     val lazyListState = rememberLazyListState()
     val currentHasMoreMessages by rememberUpdatedState(hasMoreMessages)
-    val currentIsSearchingMessages by rememberUpdatedState(isSearchingMessages)
+    val currentIsSearchingMessages by rememberUpdatedState(messageResults.isLoading())
 
     val shouldLoadMore by remember {
         derivedStateOf {
@@ -192,7 +193,9 @@ private fun UnifiedSearchResults(
         }
     }
 
-    LaunchedEffect(shouldLoadMore, messageResults.size) {
+    val messageResultItems = messageResults.dataOrNull().orEmpty()
+
+    LaunchedEffect(shouldLoadMore, messageResultItems.size) {
         if (shouldLoadMore) {
             onLoadMoreMessages()
         }
@@ -225,16 +228,16 @@ private fun UnifiedSearchResults(
         }
 
         // Messages section
-        if (hasSearchedMessages || messageResults.isNotEmpty()) {
+        if (messageResultItems.isNotEmpty()) {
             item(key = "messages_header") {
                 SectionHeader(
                     title = stringResource(CommonStrings.screen_unified_search_section_messages),
-                    count = messageResults.size,
+                    count = messageResultItems.size,
                     hasMore = hasMoreMessages,
                 )
             }
             items(
-                items = messageResults,
+                items = messageResultItems,
                 key = { "msg_${it.eventId.value}" },
             ) { item ->
                 MessageSearchResultRow(item = item, onClick = { onMessageClick(item.roomId, item.eventId) })
@@ -242,7 +245,7 @@ private fun UnifiedSearchResults(
             }
         }
 
-        if (isSearchingMessages) {
+        if (messageResults.isLoading()) {
             item(key = "loading") {
                 Row(
                     modifier = Modifier
@@ -254,7 +257,7 @@ private fun UnifiedSearchResults(
                 }
             }
         }
-        if (!isSearchingMessages && messageResults.isEmpty() && hasSearchedMessages) {
+        if (messageResults.isSuccess() && messageResultItems.isEmpty()) {
             item(key = "no_messages") {
                 Text(
                     text = stringResource(CommonStrings.screen_unified_search_no_messages),
@@ -305,6 +308,13 @@ private fun MessageSearchResultRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            Text(
+                text = "In ",
+                style = ElementTheme.typography.fontBodySmMedium,
+                color = ElementTheme.colors.textSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Avatar(avatarData = item.roomAvatar, avatarType = AvatarType.Room())
             Text(
                 text = item.roomDisplayName,

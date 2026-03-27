@@ -10,6 +10,7 @@ package io.element.android.features.home.impl.search
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import io.element.android.features.home.impl.model.aRoomListRoomSummary
+import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.designsystem.components.avatar.AvatarData
 import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.matrix.api.core.EventId
@@ -31,9 +32,7 @@ class UnifiedSearchStateProvider : PreviewParameterProvider<UnifiedSearchState> 
 private fun anEmptyUnifiedSearchState() = UnifiedSearchState(
     searchQuery = TextFieldState(),
     roomResults = persistentListOf(),
-    messageResults = persistentListOf(),
-    isSearchingMessages = false,
-    hasSearchedMessages = false,
+    messageResults = AsyncData.Uninitialized,
     hasMoreMessages = false,
     eventSink = {},
 )
@@ -44,9 +43,7 @@ private fun aUnifiedSearchStateWithRoomsOnly() = UnifiedSearchState(
         aRoomListRoomSummary(id = "!room1:matrix.org", name = "General Chat"),
         aRoomListRoomSummary(id = "!room2:matrix.org", name = "General Announcements"),
     ).toImmutableList(),
-    messageResults = persistentListOf(),
-    isSearchingMessages = false,
-    hasSearchedMessages = false,
+    messageResults = AsyncData.Loading(persistentListOf()),
     hasMoreMessages = false,
     eventSink = {},
 )
@@ -54,9 +51,7 @@ private fun aUnifiedSearchStateWithRoomsOnly() = UnifiedSearchState(
 private fun aUnifiedSearchStateWithMessagesOnly() = UnifiedSearchState(
     searchQuery = TextFieldState("hello"),
     roomResults = persistentListOf(),
-    messageResults = sampleMessageResults(),
-    isSearchingMessages = false,
-    hasSearchedMessages = true,
+    messageResults = AsyncData.Success(sampleMessageResults()),
     hasMoreMessages = true,
     eventSink = {},
 )
@@ -66,9 +61,7 @@ private fun aUnifiedSearchStateWithBoth() = UnifiedSearchState(
     roomResults = listOf(
         aRoomListRoomSummary(id = "!room1:matrix.org", name = "General Chat"),
     ).toImmutableList(),
-    messageResults = sampleMessageResults(),
-    isSearchingMessages = false,
-    hasSearchedMessages = true,
+    messageResults = AsyncData.Success(sampleMessageResults()),
     hasMoreMessages = true,
     eventSink = {},
 )
@@ -76,9 +69,7 @@ private fun aUnifiedSearchStateWithBoth() = UnifiedSearchState(
 private fun aUnifiedSearchStateSearching() = UnifiedSearchState(
     searchQuery = TextFieldState("hello"),
     roomResults = persistentListOf(),
-    messageResults = persistentListOf(),
-    isSearchingMessages = true,
-    hasSearchedMessages = false,
+    messageResults = AsyncData.Loading(),
     hasMoreMessages = false,
     eventSink = {},
 )
@@ -86,9 +77,7 @@ private fun aUnifiedSearchStateSearching() = UnifiedSearchState(
 private fun aUnifiedSearchStateNoResults() = UnifiedSearchState(
     searchQuery = TextFieldState("xyznonexistent"),
     roomResults = persistentListOf(),
-    messageResults = persistentListOf(),
-    isSearchingMessages = false,
-    hasSearchedMessages = true,
+    messageResults = AsyncData.Success(persistentListOf()),
     hasMoreMessages = false,
     eventSink = {},
 )

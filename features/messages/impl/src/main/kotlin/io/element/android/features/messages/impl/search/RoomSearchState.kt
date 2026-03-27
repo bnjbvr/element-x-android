@@ -8,13 +8,12 @@
 package io.element.android.features.messages.impl.search
 
 import androidx.compose.foundation.text.input.TextFieldState
+import io.element.android.libraries.architecture.AsyncData
 import kotlinx.collections.immutable.ImmutableList
 
 data class RoomSearchState(
     val searchQuery: TextFieldState,
-    val results: ImmutableList<RoomSearchResultItem>,
-    val isSearching: Boolean,
     val hasMoreResults: Boolean,
-    val hasSearched: Boolean,
+    val searchResults: AsyncData<ImmutableList<RoomSearchResultItem>>,
     val eventSink: (RoomSearchEvent) -> Unit,
 )

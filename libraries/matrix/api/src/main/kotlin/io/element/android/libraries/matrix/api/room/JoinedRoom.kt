@@ -20,6 +20,7 @@ import io.element.android.libraries.matrix.api.room.knock.KnockRequest
 import io.element.android.libraries.matrix.api.room.location.LiveLocationShare
 import io.element.android.libraries.matrix.api.room.powerlevels.RoomPowerLevelsValues
 import io.element.android.libraries.matrix.api.room.powerlevels.UserRoleChange
+import io.element.android.libraries.matrix.api.room.search.RoomSearchIterator
 import io.element.android.libraries.matrix.api.roomdirectory.RoomVisibility
 import io.element.android.libraries.matrix.api.timeline.Timeline
 import io.element.android.libraries.matrix.api.widget.MatrixWidgetDriver
@@ -209,4 +210,13 @@ interface JoinedRoom : BaseRoom {
      * @return Result indicating success or failure.
      */
     suspend fun sendLiveLocation(geoUri: String): Result<Unit>
+
+    /**
+     * Search for messages in this room matching the given query.
+     * Returns a [RoomSearchIterator] to iterate over paginated results.
+     *
+     * @param query The search query string.
+     * @return A [RoomSearchIterator] for paginated results.
+     */
+    fun search(query: String): RoomSearchIterator
 }

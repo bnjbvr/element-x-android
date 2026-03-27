@@ -8,7 +8,6 @@
 package io.element.android.features.home.impl.search
 
 sealed interface UnifiedSearchEvent {
-    data object SearchMessages : UnifiedSearchEvent
     data object Clear : UnifiedSearchEvent
     data object LoadMoreMessages : UnifiedSearchEvent
     data class UpdateVisibleRange(val range: IntRange) : UnifiedSearchEvent

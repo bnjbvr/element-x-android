@@ -8,7 +8,6 @@
 package io.element.android.features.home.impl.search
 
 sealed interface GlobalSearchEvent {
-    data object Search : GlobalSearchEvent
     data object Clear : GlobalSearchEvent
     data object LoadMore : GlobalSearchEvent
 }

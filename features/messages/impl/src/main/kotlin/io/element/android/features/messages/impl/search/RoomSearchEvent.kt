@@ -8,7 +8,6 @@
 package io.element.android.features.messages.impl.search
 
 sealed interface RoomSearchEvent {
-    data object Search : RoomSearchEvent
     data object Clear : RoomSearchEvent
     data object LoadMore : RoomSearchEvent
 }

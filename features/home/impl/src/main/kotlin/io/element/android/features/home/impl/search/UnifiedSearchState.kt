@@ -9,14 +9,13 @@ package io.element.android.features.home.impl.search
 
 import androidx.compose.foundation.text.input.TextFieldState
 import io.element.android.features.home.impl.model.RoomListRoomSummary
+import io.element.android.libraries.architecture.AsyncData
 import kotlinx.collections.immutable.ImmutableList
 
 data class UnifiedSearchState(
     val searchQuery: TextFieldState,
     val roomResults: ImmutableList<RoomListRoomSummary>,
-    val messageResults: ImmutableList<GlobalSearchResultItem>,
-    val isSearchingMessages: Boolean,
-    val hasSearchedMessages: Boolean,
+    val messageResults: AsyncData<ImmutableList<GlobalSearchResultItem>>,
     val hasMoreMessages: Boolean,
     val eventSink: (UnifiedSearchEvent) -> Unit,
 )

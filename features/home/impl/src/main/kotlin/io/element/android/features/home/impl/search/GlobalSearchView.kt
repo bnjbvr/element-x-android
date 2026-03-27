@@ -86,7 +86,6 @@ fun GlobalSearchView(
         ) {
             GlobalSearchInputRow(
                 searchQuery = state.searchQuery,
-                onSearchClick = { state.eventSink(GlobalSearchEvent.Search) },
                 onClearClick = { state.eventSink(GlobalSearchEvent.Clear) },
             )
             GlobalSearchResultsList(
@@ -104,7 +103,6 @@ fun GlobalSearchView(
 @Composable
 private fun GlobalSearchInputRow(
     searchQuery: TextFieldState,
-    onSearchClick: () -> Unit,
     onClearClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -123,7 +121,6 @@ private fun GlobalSearchInputRow(
             ),
             lineLimits = TextFieldLineLimits.SingleLine,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            onKeyboardAction = { onSearchClick() },
             cursorBrush = SolidColor(ElementTheme.colors.textActionAccent),
             decorator = { innerTextField ->
                 Surface(
@@ -158,12 +155,6 @@ private fun GlobalSearchInputRow(
                 }
             },
         )
-        IconButton(onClick = onSearchClick) {
-            Icon(
-                imageVector = CompoundIcons.Search(),
-                contentDescription = stringResource(CommonStrings.action_search),
-            )
-        }
     }
 }
 

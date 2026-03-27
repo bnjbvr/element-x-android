@@ -9,6 +9,7 @@ package io.element.android.features.messages.impl.search
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import io.element.android.libraries.architecture.AsyncData
 import io.element.android.libraries.designsystem.components.avatar.AvatarData
 import io.element.android.libraries.designsystem.components.avatar.AvatarSize
 import io.element.android.libraries.matrix.api.core.EventId
@@ -26,25 +27,21 @@ class RoomSearchStateProvider : PreviewParameterProvider<RoomSearchState> {
 
 fun anEmptyRoomSearchState() = RoomSearchState(
     searchQuery = TextFieldState(),
-    results = persistentListOf(),
-    isSearching = false,
+    searchResults = AsyncData.Uninitialized,
     hasMoreResults = false,
-    hasSearched = false,
     eventSink = {},
 )
 
 fun aSearchingRoomSearchState() = RoomSearchState(
     searchQuery = TextFieldState("hello"),
-    results = persistentListOf(),
-    isSearching = true,
+    searchResults = AsyncData.Loading(),
     hasMoreResults = false,
-    hasSearched = false,
     eventSink = {},
 )
 
 fun aRoomSearchStateWithResults() = RoomSearchState(
     searchQuery = TextFieldState("hello"),
-    results = listOf(
+    searchResults = AsyncData.Success(persistentListOf(
         RoomSearchResultItem(
             eventId = EventId("\$event1"),
             senderDisplayName = "Alice",
@@ -66,18 +63,14 @@ fun aRoomSearchStateWithResults() = RoomSearchState(
             contentDescription = "📎 report.pdf",
             formattedTimestamp = "24/03/2026 09:15",
         ),
-    ).toImmutableList(),
-    isSearching = false,
+    )),
     hasMoreResults = true,
-    hasSearched = true,
     eventSink = {},
 )
 
 fun aRoomSearchStateNoResults() = RoomSearchState(
     searchQuery = TextFieldState("xyznonexistent"),
-    results = persistentListOf(),
-    isSearching = false,
+    searchResults = AsyncData.Success(persistentListOf()),
     hasMoreResults = false,
-    hasSearched = true,
     eventSink = {},
 )

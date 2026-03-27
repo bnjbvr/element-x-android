@@ -302,8 +302,4 @@ class RustBaseRoom(
             }
         }
     }
-
-    override fun search(query: String): RoomSearchIterator {
-        return RustRoomSearchIterator(innerRoom.search(query))
-    }
 }
