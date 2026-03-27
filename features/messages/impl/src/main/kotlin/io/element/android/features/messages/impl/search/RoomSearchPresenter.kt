@@ -74,11 +74,17 @@ class RoomSearchPresenter @Inject constructor(
         LaunchedEffect(Unit) {
             snapshotFlow { searchQuery.text.toString().trim() to immediateSearchTrigger }
                 .debounce { (query, _) ->
-                    if (query.isBlank()) Long.MAX_VALUE else SEARCH_DEBOUNCE_MS
+                    if (query.isBlank()) 0L else SEARCH_DEBOUNCE_MS
                 }
                 .distinctUntilChanged { old, new -> old.first == new.first }
                 .collect { (query, _) ->
-                    if (query.isBlank()) return@collect
+                    if (query.isBlank()) {
+                        results = persistentListOf()
+                        hasMoreResults = false
+                        hasSearched = false
+                        currentIterator = null
+                        return@collect
+                    }
                     isSearching = true
                     try {
                         val iterator = room.search(query)

@@ -86,11 +86,17 @@ class UnifiedSearchPresenter @Inject constructor(
         LaunchedEffect(Unit) {
             snapshotFlow { searchQuery.text.toString().trim() to immediateSearchTrigger }
                 .debounce { (query, _) ->
-                    if (query.isBlank()) Long.MAX_VALUE else MESSAGE_SEARCH_DEBOUNCE_MS
+                    if (query.isBlank()) 0L else MESSAGE_SEARCH_DEBOUNCE_MS
                 }
                 .distinctUntilChanged { old, new -> old.first == new.first }
                 .collect { (query, _) ->
-                    if (query.isBlank()) return@collect
+                    if (query.isBlank()) {
+                        messageResults = persistentListOf()
+                        hasMoreMessages = false
+                        hasSearchedMessages = false
+                        currentIterator = null
+                        return@collect
+                    }
                     isSearchingMessages = true
                     roomInfoCache.clear()
                     try {
